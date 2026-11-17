@@ -1,0 +1,14 @@
+[project]
+name = "wyrd-skills-tools"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["markdown-it-py==4.0.0", "PyYAML==6.0.3"]
+
+[dependency-groups]
+dev = ["ruff==0.14.5", "pymarkdownlnt==0.9.33"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
