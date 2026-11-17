@@ -112,5 +112,166 @@ class CheckTests(TreeFixture):
         self.assertIn("broken relative link %7Bpath%7D", errors[0])
 
 
+class BuildTests(TreeFixture):
+    def setUp(self):
+        super().setUp()
+        self.base = self.root / "base"
+        self.output = self.root / "output"
+        self.write(
+            "base/alpha/SKILL.md",
+            "---\nname: alpha\ndescription: base description\n---\n\n# Base\n",
+        )
+        self.workspace = self.root / "workspace"
+        self.workspace.mkdir()
+
+    def build(self, *flags):
+        return self.run_cli("build", "--base", self.base, "--output", self.output, *flags)
+
+    def assert_success(self, result):
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("PASS:", result.stdout)
+
+    def test_appends_in_argument_order_adds_files_skills_and_project_headings(self):
+        self.write("workspace/alpha/SKILL.md", "Workspace instructions\n[guide](guide.md)\n")
+        self.write("workspace/alpha/guide.md", "Workspace guide\n")
+        self.write("project/alpha/SKILL.md", "Project instructions\n[script](run.sh)\n")
+        self.write("project/alpha/guide.md", "Project guide\n")
+        self.write("project/alpha/run.sh", "#!/bin/sh\necho test\n").chmod(0o755)
+        self.write(
+            "project/beta/SKILL.md", "---\nname: beta\ndescription: new skill\n---\n\nNew skill\n"
+        )
+        self.write("project/beta/README.md", "New readme\n")
+        before = {path: path.read_bytes() for path in self.base.rglob("*") if path.is_file()}
+        result = self.build(
+            "--overlay",
+            self.workspace,
+            "--project",
+            "/workspace/project with spaces",
+            self.root / "project",
+        )
+        self.assert_success(result)
+        merged = (self.output / "alpha/SKILL.md").read_text()
+        self.assertTrue(merged.startswith("---\nname: alpha\ndescription: base description\n---"))
+        self.assertLess(
+            merged.index("Workspace instructions"), merged.index("Project instructions")
+        )
+        self.assertIn("## Project: /workspace/project with spaces\n\nProject instructions", merged)
+        self.assertEqual(
+            "Workspace guide\n\n## Project: /workspace/project with spaces\n\nProject guide\n",
+            (self.output / "alpha/guide.md").read_text(),
+        )
+        new_skill = (self.output / "beta/SKILL.md").read_text()
+        self.assertTrue(new_skill.startswith("---\nname: beta\ndescription: new skill\n---\n"))
+        self.assertIn("## Project: /workspace/project with spaces\n\nNew skill", new_skill)
+        self.assertIn(
+            "## Project: /workspace/project with spaces",
+            (self.output / "beta/README.md").read_text(),
+        )
+        self.assertEqual(0o755, (self.output / "alpha/run.sh").stat().st_mode & 0o777)
+        self.assertEqual(
+            before, {path: path.read_bytes() for path in self.base.rglob("*") if path.is_file()}
+        )
+        self.assertEqual([], check_tree(self.output))
+
+    def test_project_and_workspace_arguments_keep_their_order(self):
+        self.write("workspace/alpha/SKILL.md", "last\n")
+        self.write("project/alpha/SKILL.md", "first\n")
+        self.assert_success(
+            self.build("--project", "/project", self.root / "project", "--overlay", self.workspace)
+        )
+        text = (self.output / "alpha/SKILL.md").read_text()
+        self.assertLess(text.index("first"), text.index("last"))
+
+    def test_validation_failures_preserve_previous_output(self):
+        self.assert_success(self.build())
+        previous = self.output.readlink()
+        content = (self.output / "alpha/SKILL.md").read_bytes()
+        for path, text, message in [
+            ("alpha/SKILL.md", "[broken](absent.md)\n", "broken relative link absent.md"),
+            ("alpha/orphan.txt", "orphan", "alpha/orphan.txt: orphan file"),
+        ]:
+            with self.subTest(path=path):
+                added = self.write("workspace/" + path, text)
+                result = self.build("--overlay", self.workspace)
+                self.assertEqual(1, result.returncode)
+                self.assertIn(message, result.stderr)
+                self.assertNotIn("PASS", result.stdout)
+                self.assertEqual(previous, self.output.readlink())
+                self.assertEqual(content, (self.output / "alpha/SKILL.md").read_bytes())
+                self.assertEqual(1, len(list(self.root.glob(".output.build-*"))))
+                added.unlink()
+
+    def test_non_markdown_collisions_are_refused(self):
+        self.write("base/alpha/SKILL.md", "[data](data.json)\n")
+        self.write("base/alpha/data.json", "{}")
+        self.write("workspace/alpha/data.json", "[]")
+        self.assert_success(self.build())
+        result = self.build("--overlay", self.workspace)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("refusing append to non-Markdown file", result.stderr)
+        self.assertEqual("{}", (self.output / "alpha/data.json").read_text())
+
+    def test_appended_skill_front_matter_is_refused(self):
+        self.write("workspace/alpha/SKILL.md", "---\ndescription: replacement\n---\n")
+        result = self.build("--overlay", self.workspace)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("must not contain front matter", result.stderr)
+        self.assertFalse(self.output.exists())
+
+    def test_successful_rebuild_switches_symlink_and_removes_previous_generation(self):
+        self.assert_success(self.build())
+        previous = self.output.resolve()
+        self.write("workspace/alpha/SKILL.md", "new text\n")
+        self.assert_success(self.build("--overlay", self.workspace))
+        self.assertTrue(self.output.is_symlink())
+        self.assertFalse(previous.exists())
+        self.assertIn("new text", (self.output / "alpha/SKILL.md").read_text())
+        self.assertEqual(1, len(list(self.root.glob(".output.build-*"))))
+
+    def test_invalid_inputs_and_unmanaged_outputs_are_preserved(self):
+        result = self.build("--overlay", self.root / "absent")
+        self.assertEqual(1, result.returncode)
+        self.assertFalse(self.output.exists())
+        self.output.mkdir()
+        keep = self.write("output/keep.txt", "keep")
+        result = self.build()
+        self.assertEqual(1, result.returncode)
+        self.assertIn("output must be absent", result.stderr)
+        self.assertEqual("keep", keep.read_text())
+        keep.unlink()
+        self.output.rmdir()
+        self.output.symlink_to(self.base, target_is_directory=True)
+        result = self.build()
+        self.assertEqual(1, result.returncode)
+        self.assertIn("unmanaged symlink", result.stderr)
+        self.assertEqual(self.base, self.output.resolve())
+
+    def test_output_cannot_overlap_inputs(self):
+        result = self.run_cli("build", "--base", self.base, "--output", self.base / "output")
+        self.assertEqual(1, result.returncode)
+        self.assertIn("separate from every input", result.stderr)
+        result = self.run_cli("build", "--base", self.base, "--output", self.root)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("separate from every input", result.stderr)
+
+    def test_new_skill_requires_entry_point_and_rejects_symlinks(self):
+        added = self.write("workspace/beta/guide.md")
+        result = self.build("--overlay", self.workspace)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("new skill must include SKILL.md", result.stderr)
+        added.unlink()
+        added.symlink_to(self.base / "alpha/SKILL.md")
+        result = self.build("--overlay", self.workspace)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("symlinks are not supported", result.stderr)
+
+    def test_empty_base_fails_without_publishing(self):
+        (self.base / "alpha/SKILL.md").unlink()
+        result = self.build()
+        self.assertEqual(1, result.returncode)
+        self.assertIn("no skills found", result.stderr)
+        self.assertFalse(self.output.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

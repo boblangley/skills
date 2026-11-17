@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
+import json
+import os
 import re
+import shutil
 import sys
+import tempfile
 from collections import Counter
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -128,6 +133,9 @@ def check_tree(root: Path) -> list[str]:
                     continue
                 target = (path.parent / relative).resolve() if relative else path
                 label = f"{path.relative_to(root)}:{link.line}: broken relative link {link.target}"
+                if not target.is_relative_to(root):
+                    errors.append(label + " (outside skills tree)")
+                    continue
                 if not target.exists():
                     errors.append(label)
                     continue
@@ -149,13 +157,155 @@ def check_tree(root: Path) -> list[str]:
     return errors
 
 
+@dataclass(frozen=True)
+class Overlay:
+    folder: Path
+    project: str | None = None
+
+
+class OrderedOverlay(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        overlays = list(getattr(namespace, self.dest, None) or [])
+        if option_string == "--project":
+            project, folder = values
+            if not Path(project).is_absolute() or "\n" in project or "\r" in project:
+                raise argparse.ArgumentError(self, "project path must be absolute and on one line")
+            overlays.append(Overlay(Path(folder), project))
+        else:
+            overlays.append(Overlay(Path(values)))
+        setattr(namespace, self.dest, overlays)
+
+
+def project_text(text: str, project: str) -> str:
+    heading = f"## Project: {project}\n\n"
+    if text.startswith("---\n"):
+        # Keep a new skill's YAML description at the beginning of SKILL.md.
+        match = re.search(r"^---[ \t]*$", text[4:], re.MULTILINE)
+        if match:
+            end = 4 + match.end()
+            return text[:end] + "\n\n" + heading + text[end:].lstrip("\n")
+    return heading + text
+
+
+def merge_overlay(stage: Path, overlay: Overlay) -> None:
+    for skill in sorted(overlay.folder.iterdir()):
+        if skill.name.startswith(".") or skill.name == "README.md":
+            continue
+        if skill.is_symlink() or not skill.is_dir():
+            raise ValueError(f"{skill}: expected a skill folder, not a symlink or file")
+        for source in sorted(skill.rglob("*")):
+            if source.is_symlink():
+                raise ValueError(f"{source}: symlinks are not supported")
+            target = stage / source.relative_to(overlay.folder)
+            if source.is_dir():
+                if target.exists() and not target.is_dir():
+                    raise ValueError(f"{source}: directory conflicts with a file")
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            if not source.is_file():
+                raise ValueError(f"{source}: expected a regular file")
+            if target.is_dir():
+                raise ValueError(f"{source}: file conflicts with a directory")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists() and source.suffix.lower() != ".md":
+                raise ValueError(f"{source}: refusing append to non-Markdown file")
+            if source.suffix.lower() == ".md":
+                text = source.read_text(encoding="utf-8")
+                if target.exists() and source.name == "SKILL.md" and text.startswith("---\n"):
+                    raise ValueError(f"{source}: appended SKILL.md must not contain front matter")
+                if overlay.project:
+                    text = project_text(text, overlay.project)
+                if target.exists():
+                    text = target.read_text(encoding="utf-8").rstrip("\n") + "\n\n" + text
+                target.write_text(text, encoding="utf-8")
+            else:
+                shutil.copy2(source, target)
+        if not (stage / skill.name / "SKILL.md").is_file():
+            raise ValueError(f"{skill}: a new skill must include SKILL.md")
+
+
+def previous_build(output: Path) -> Path | None:
+    if not output.is_symlink():
+        if output.exists():
+            raise ValueError(f"{output}: output must be absent or a symlink managed by this build")
+        return None
+    previous = output.resolve(strict=True)
+    marker = previous / ".skills-build.json"
+    if (
+        previous.parent != output.parent
+        or not previous.name.startswith(f".{output.name}.build-")
+        or not marker.is_file()
+        or json.loads(marker.read_text(encoding="utf-8")).get("output") != str(output)
+    ):
+        raise ValueError(f"{output}: refusing to replace an unmanaged symlink")
+    return previous
+
+
+def build_tree(base: Path, overlays: list[Overlay], output: Path) -> None:
+    base = base.resolve(strict=True)
+    overlays = [Overlay(item.folder.resolve(strict=True), item.project) for item in overlays]
+    # Resolve the parent, but preserve the leaf: it is the published symlink.
+    output = output.parent.resolve() / output.name
+    for source in [base, *(item.folder for item in overlays)]:
+        if not source.is_dir():
+            raise ValueError(f"{source}: expected a directory")
+        if output.is_relative_to(source) or source.is_relative_to(output):
+            raise ValueError(f"{output}: output must be separate from every input tree")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    # Serialize publishers. Keep the lock file so all processes lock the same inode.
+    with (output.parent / f".{output.name}.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        previous = previous_build(output)
+        stage = Path(tempfile.mkdtemp(prefix=f".{output.name}.build-", dir=output.parent))
+        link = stage.with_name(stage.name + ".link")
+        published = False
+        try:
+            for skill in skill_folders(base):
+                for source in [skill, *skill.rglob("*")]:
+                    if source.is_symlink():
+                        raise ValueError(f"{source}: symlinks are not supported")
+                shutil.copytree(skill, stage / skill.name)
+            for overlay in overlays:
+                merge_overlay(stage, overlay)
+            errors = check_tree(stage)
+            if errors:
+                raise ValueError("built tree failed validation:\n" + "\n".join(errors))
+            marker = {"output": str(output)}
+            (stage / ".skills-build.json").write_text(json.dumps(marker) + "\n", encoding="utf-8")
+            link.symlink_to(stage.name, target_is_directory=True)
+            os.replace(link, output)
+            published = True
+        finally:
+            link.unlink(missing_ok=True)
+            if not published:
+                shutil.rmtree(stage)
+        if previous:
+            try:
+                shutil.rmtree(previous)
+            except OSError as exc:
+                print(
+                    f"Warning: published build; could not remove {previous}: {exc}", file=sys.stderr
+                )
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     check = commands.add_parser("check", help="Check relative links and orphan files")
     check.add_argument("tree", type=Path)
+    build = commands.add_parser("build", help="Merge ordered overlays and publish a checked tree")
+    build.add_argument("--base", required=True, type=Path)
+    build.add_argument("--output", required=True, type=Path)
+    build.add_argument("--overlay", dest="overlays", action=OrderedOverlay, metavar="FOLDER")
+    build.add_argument(
+        "--project", dest="overlays", action=OrderedOverlay, nargs=2, metavar=("PATH", "FOLDER")
+    )
     args = parser.parse_args(argv)
     try:
+        if args.command == "build":
+            build_tree(args.base, args.overlays or [], args.output)
+            print(f"PASS: built skills tree {args.output}")
+            return 0
         errors = check_tree(args.tree)
         if errors:
             print("\n".join(errors), file=sys.stderr)
