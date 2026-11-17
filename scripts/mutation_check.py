@@ -89,6 +89,43 @@ MUTATIONS = [
         "BuildTests.test_published_generation_is_readable_by_other_users",
     ),
     (
+        "HTML block links",
+        'if token.type == "html_block":',
+        "if False:",
+        "CheckTests.test_html_block_only_broken_links_are_reported",
+    ),
+    (
+        "HTML inline links",
+        'elif child.type == "html_inline":',
+        "elif False:",
+        "CheckTests.test_html_inline_only_broken_links_are_reported",
+    ),
+    (
+        "HTML id anchors",
+        'if key == "id" or (tag == "a" and key == "name"):',
+        'if tag == "a" and key == "name":',
+        "CheckTests.test_html_id_and_name_anchors_are_fragment_targets",
+    ),
+    (
+        "HTML name anchors",
+        'if key == "id" or (tag == "a" and key == "name"):',
+        'if key == "id":',
+        "CheckTests.test_html_id_and_name_anchors_are_fragment_targets",
+    ),
+    (
+        "base symlink refusal",
+        "                    if source.is_symlink():",
+        "                    if False:",
+        "BuildTests.test_base_symlink_is_refused",
+    ),
+    (
+        "identical non-Markdown collision refusal",
+        'if target.exists() and source.suffix.lower() != ".md":',
+        'if target.exists() and source.suffix.lower() != ".md" '
+        "and source.read_bytes() != target.read_bytes():",
+        "BuildTests.test_identical_non_markdown_collision_is_refused",
+    ),
+    (
         "validation before publication",
         "errors = check_tree(stage)\n            if errors:",
         "errors = check_tree(stage)\n            if False:",

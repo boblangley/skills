@@ -66,6 +66,45 @@ class CheckTests(TreeFixture):
         self.write("alpha/assets/image.png", "image")
         self.assertEqual([], check_tree(self.root))
 
+    def test_html_block_only_broken_links_are_reported(self):
+        self.write(
+            "alpha/SKILL.md",
+            '<div>\n<a href="missing-block.md">broken</a>\n<img src="missing-block.png">\n</div>\n',
+        )
+        self.assertEqual(
+            [
+                "alpha/SKILL.md:2: broken relative link missing-block.md",
+                "alpha/SKILL.md:3: broken relative link missing-block.png",
+            ],
+            check_tree(self.root),
+        )
+
+    def test_html_inline_only_broken_links_are_reported(self):
+        self.write(
+            "alpha/SKILL.md",
+            'Text <a href="missing-inline.md">broken</a> and <img src="missing-inline.png">.\n',
+        )
+        self.assertEqual(
+            [
+                "alpha/SKILL.md:1: broken relative link missing-inline.md",
+                "alpha/SKILL.md:1: broken relative link missing-inline.png",
+            ],
+            check_tree(self.root),
+        )
+
+    def test_html_id_and_name_anchors_are_fragment_targets(self):
+        self.write(
+            "alpha/SKILL.md",
+            "[id](target.md#by-id) [name](target.md#by-name) [missing](target.md#absent)\n",
+        )
+        self.write("alpha/target.md", '<div id="by-id"></div>\n\nText <a name="by-name"></a>.\n')
+        self.assertEqual(
+            [
+                "alpha/SKILL.md:1: broken relative link target.md#absent (missing anchor)",
+            ],
+            check_tree(self.root),
+        )
+
     def test_code_comments_environment_paths_and_remote_links_are_ignored(self):
         self.write(
             "alpha/SKILL.md",
@@ -230,6 +269,35 @@ class BuildTests(TreeFixture):
         self.assertEqual(1, result.returncode)
         self.assertIn("refusing append to non-Markdown file", result.stderr)
         self.assertEqual("{}", (self.output / "alpha/data.json").read_text())
+
+    def test_identical_non_markdown_collision_is_refused(self):
+        self.write("base/alpha/SKILL.md", "[data](data.json)\n")
+        self.write("base/alpha/data.json", "{}")
+        self.write("workspace/alpha/data.json", "{}")
+        self.assert_success(self.build())
+        previous = self.output.readlink()
+        result = self.build("--overlay", self.workspace)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("refusing append to non-Markdown file", result.stderr)
+        self.assertEqual(previous, self.output.readlink())
+        self.assertEqual("{}", (self.output / "alpha/data.json").read_text())
+
+    def test_base_symlink_is_refused(self):
+        self.write("base/alpha/SKILL.md", "[data](data.txt)\n")
+        target = self.write("external.txt", "external data")
+        (self.base / "alpha/data.txt").symlink_to(target)
+        result = self.build()
+        self.assertEqual(1, result.returncode)
+        self.assertIn("data.txt: symlinks are not supported", result.stderr)
+        self.assertFalse(self.output.exists())
+        self.assertEqual("external data", target.read_text())
+
+    def test_output_parent_is_created(self):
+        self.output = self.root / "new-parent/skills"
+        self.assertFalse(self.output.parent.exists())
+        self.assert_success(self.build())
+        self.assertTrue(self.output.is_symlink())
+        self.assertTrue((self.output.parent / ".skills.lock").is_file())
 
     def test_appended_skill_front_matter_is_refused(self):
         self.write("workspace/alpha/SKILL.md", "---\ndescription: replacement\n---\n")

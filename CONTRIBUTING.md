@@ -51,7 +51,17 @@ The check names every broken relative link (including Markdown heading fragments
 
 ## Building overlays: the interface for skills sync
 
-The caller supplies the base, output and overlays. The build discovers no workspace or project paths:
+The caller supplies the base, output and overlays. The build discovers no workspace or project paths.
+
+### Calling the build
+
+Before calling it:
+
+- Install Task, uv and Python 3.11 or later in the caller's environment.
+- Update the skills clone to a commit containing this `Taskfile.yml`, `scripts/skills_tree.py`, `pyproject.toml` and `uv.lock`. The checkout passed to `task --dir` supplies the builder; an older checkout without these files cannot build. In the example below, that checkout is also the input `--base` tree. A different `--base` changes the input, not the builder version.
+- Keep the builder checkout writable. Every call runs `uv sync --frozen` there before building. It maintains `.venv/` in that checkout and installs the locked development group (Ruff and PyMarkdown) as well as the build dependencies. `.venv/` is ignored, so the clone remains clean for `git status --porcelain` and fast-forward updates.
+- Provide network access on the first build and after `uv.lock` changes whenever a locked package is missing from the uv cache. Prewarm with `task --dir /absolute/path/to/base tools` while online for later offline runs. An offline first build with an empty cache fails before producing output; dependencies are not bundled with the clone.
+- Choose a writable, dedicated output parent outside every input tree. All overlay folders must exist; omit missing optional overlays in the caller. An empty overlay folder is valid.
 
 ```sh
 task --dir /absolute/path/to/base build -- \
@@ -61,7 +71,9 @@ task --dir /absolute/path/to/base build -- \
   --project /absolute/path/to/project /absolute/path/to/project/skills
 ```
 
-`--overlay FOLDER` and `--project PATH FOLDER` may each repeat; they are applied in argument order after the base. For workspace-then-project precedence, pass the workspace overlay first. `PATH` is the absolute project path used as the heading, and may contain spaces when quoted. All source folders must exist; omit missing optional overlays in the caller. An empty overlay folder is valid. All filesystem arguments are relative to the Taskfile directory unless absolute, so callers should pass absolute paths.
+`--overlay FOLDER` and `--project PATH FOLDER` may each repeat; they are applied in argument order after the base. For workspace-then-project precedence, pass the workspace overlay first. `PATH` is the absolute project path used as the heading, and may contain spaces when quoted. All filesystem arguments are relative to the Taskfile directory unless absolute, so callers should pass absolute paths.
+
+### Overlay content
 
 Overlay folders mirror the base: `<skill>/SKILL.md`, `<skill>/references/...`, and other files within the skill. Top-level dotfiles, `README.md` and `AGENTS.md` are metadata and are ignored. Every other top-level overlay entry must be a skill folder. A new skill supplies its own `SKILL.md`.
 
@@ -69,8 +81,22 @@ Overlay folders mirror the base: `<skill>/SKILL.md`, `<skill>/references/...`, a
 - A new file or skill is added. A collision on a non-Markdown file fails, even when the bytes are identical. New non-Markdown files retain their permissions.
 - Every project Markdown contribution begins with `## Project: PATH`. For a new file with YAML front matter, the heading follows the front matter so a new skill's description remains readable.
 
-The output path must be separate from every input tree and must initially be absent. On success it is a **managed symlink** to a sibling directory named `.skills.build-*` (using the output basename). Consumers should keep links pointed through the output path, rather than resolving its generation directory. The sibling `.skills.lock` serializes builds; `.skills-build.json` inside a generation identifies its owner. These files are managed build state.
+All included base and overlay content is subject to the [tree check](#checking-a-skills-tree): a source symlink within a skill fails the build, and an overlay support file that no Markdown file in that skill links to is an orphan and fails the build. Fix the source links/content before retrying.
 
-The build checks the staged merged tree before switching the symlink atomically. A merge or validation failure exits nonzero, prints the failing paths to stderr, removes the failed staging directory, and leaves the previous output intact. Success prints `PASS: built skills tree ...` only after publication and removes the previous generation. An existing ordinary directory or unmanaged symlink is refused. A failure to remove an obsolete generation is reported as a warning after publication.
+### Output lifecycle
 
-The command works on Linux and macOS (POSIX symlinks and file locks). This repository provides the merge/check operation; workspace discovery, the `skills sync` command and links for Claude Code, Codex and Pi belong to the caller.
+OUTPUT must be **absent before the first build; afterwards it is the managed symlink** reused by every later build. The parent directory is created if missing. Reserve that parent for this output: with `/absolute/path/to/generated/skills` it holds `.skills.lock`, `.skills.build-*` generation directories, and temporary `.skills.build-*.link` symlinks. Each generation carries `.skills-build.json` naming its absolute output owner. Keep the parent and output name stable so those ownership records stay valid.
+
+The output path must be separate from every input tree. An existing ordinary directory or unmanaged symlink is refused. In particular, today's `~/.claude/skills` directory of links cannot be OUTPUT: choose a new generated path, successfully build it, then migrate the agent links to point through that path while preserving any existing installation data. Consumers should keep links pointed through OUTPUT rather than resolving its generation directory.
+
+A build holds the sibling lock, stages and checks the merged tree, then switches the output symlink atomically. Merge or validation failure exits nonzero, prints the failing paths to stderr, removes the failed stage and leaves the previous output intact. Success prints `PASS: built skills tree ...` only after publication and removes the previous generation. A published generation's root has mode 0755. Failure to remove an obsolete generation is reported as a warning after publication.
+
+### Recovery
+
+- A missing generation behind OUTPUT is rebuilt automatically when the link names a sibling `.skills.build-*` for that output. The dangling output link is replaced only after a new tree passes validation. An unrelated dangling link is refused.
+- After an interrupted process, rerun the same build command. While holding the lock, it removes owned stale generations, leftover `.skills.build-*.link` symlinks and empty unmarked staging directories, keeping the current generation. Nonempty directories without a valid ownership marker and foreign/symlinked generation directories are preserved.
+- If an output is refused because it is an ordinary directory, has a corrupt/mismatched ownership marker, or points elsewhere, choose a fresh generated path and migrate consumer links only after it builds successfully. To restore the original output path instead, stop all builders, retain the whole dedicated output parent as a backup, then rerun the original command to recreate it. Inspect preserved unmarked leftovers before removing them; they may contain data the builder does not own.
+
+Leave the lock file in place while any builder may run: removing it can give concurrent processes different locks. Builders and consumers should run as users with access to the output parent and source files.
+
+The command requires POSIX symlinks and file locks (Linux/macOS). This repository provides the merge/check operation; workspace discovery, the `skills sync` command and links for Claude Code, Codex and Pi belong to the caller.
