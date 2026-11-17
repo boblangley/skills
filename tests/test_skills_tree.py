@@ -1,5 +1,7 @@
 """Fixture trees exercise the checker's public behaviour."""
 
+import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -299,6 +301,158 @@ class BuildTests(TreeFixture):
         self.assertEqual(1, result.returncode)
         self.assertIn("unmanaged symlink", result.stderr)
         self.assertEqual(self.base, self.output.resolve())
+
+    def generation(self, name=".output.build-fixture", parent=None, owner=None):
+        target = (parent or self.root) / name
+        target.mkdir(parents=True)
+        (target / "keep.txt").write_text("preserve this target", encoding="utf-8")
+        (target / ".skills-build.json").write_text(
+            json.dumps({"output": str(owner or self.output)}), encoding="utf-8"
+        )
+        return target
+
+    def assert_unmanaged_target_survives(self, target):
+        self.output.symlink_to(target, target_is_directory=True)
+        result = self.build()
+        self.assertEqual(1, result.returncode)
+        self.assertIn("refusing to replace an unmanaged symlink", result.stderr)
+        self.assertEqual(target, self.output.readlink())
+        self.assertEqual(target.resolve(), self.output.resolve())
+        self.assertEqual("preserve this target", (target / "keep.txt").read_text())
+
+    def test_deletion_guard_refuses_generation_without_marker(self):
+        target = self.generation()
+        (target / ".skills-build.json").unlink()
+        self.assert_unmanaged_target_survives(target)
+
+    def test_deletion_guard_refuses_generation_with_foreign_owner(self):
+        target = self.generation(owner=self.root / "another-output")
+        self.assert_unmanaged_target_survives(target)
+
+    def test_deletion_guard_refuses_generation_in_another_parent(self):
+        target = self.generation(parent=self.root / "elsewhere")
+        self.assert_unmanaged_target_survives(target)
+
+    def test_deletion_guard_refuses_generation_with_wrong_name(self):
+        target = self.generation(name="unrelated-directory")
+        self.assert_unmanaged_target_survives(target)
+
+    def test_deletion_guard_refuses_generation_symlink(self):
+        target = self.generation(name="unrelated-directory")
+        alias = self.root / ".output.build-alias"
+        alias.symlink_to(target, target_is_directory=True)
+        self.assert_unmanaged_target_survives(alias)
+
+    def test_deletion_guard_refuses_invalid_marker(self):
+        for metadata in ["[]", "not JSON"]:
+            with self.subTest(metadata=metadata):
+                target = self.generation()
+                (target / ".skills-build.json").write_text(metadata, encoding="utf-8")
+                self.assert_unmanaged_target_survives(target)
+                self.output.unlink()
+                shutil.rmtree(target)
+
+    def test_dangling_managed_output_is_rebuilt(self):
+        self.assert_success(self.build())
+        previous = self.output.readlink()
+        shutil.rmtree(self.output.resolve())
+        self.assertTrue(self.output.is_symlink())
+        self.assertFalse(self.output.exists())
+        self.assert_success(self.build())
+        self.assertNotEqual(previous, self.output.readlink())
+        self.assertEqual([], check_tree(self.output))
+
+    def test_dangling_unmanaged_output_is_refused(self):
+        for target in [self.root / "missing", self.root / "other/.output.build-missing"]:
+            with self.subTest(target=target):
+                self.output.symlink_to(target, target_is_directory=True)
+                result = self.build()
+                self.assertEqual(1, result.returncode)
+                self.assertIn("refusing to replace an unmanaged symlink", result.stderr)
+                self.assertEqual(target, self.output.readlink())
+                self.output.unlink()
+
+    def test_failed_rebuild_preserves_dangling_managed_output(self):
+        target = Path(".output.build-missing")
+        self.output.symlink_to(target, target_is_directory=True)
+        self.write("workspace/alpha/SKILL.md", "[bad](missing.md)\n")
+        result = self.build("--overlay", self.workspace)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("broken relative link", result.stderr)
+        self.assertEqual(target, self.output.readlink())
+        self.assertEqual([], list(self.root.glob(".output.build-*")))
+
+    def test_stale_owned_builds_are_cleaned_without_removing_foreign_data(self):
+        self.assert_success(self.build())
+        current = self.output.resolve()
+        stale = self.generation(name=".output.build-stale")
+        stale_link = self.root / ".output.build-stale.link"
+        stale_link.symlink_to(stale.name, target_is_directory=True)
+        dangling_link = self.root / ".output.build-dangling.link"
+        dangling_link.symlink_to(".output.build-missing", target_is_directory=True)
+        unmarked = self.generation(name=".output.build-unmarked")
+        (unmarked / ".skills-build.json").unlink()
+        foreign = self.generation(name=".output.build-foreign", owner=self.root / "another-output")
+        outside = self.generation(name="outside")
+        alias = self.root / ".output.build-alias"
+        alias.symlink_to(outside, target_is_directory=True)
+        empty = self.root / ".output.build-empty"
+        empty.mkdir()
+        self.write("workspace/alpha/SKILL.md", "[bad](missing.md)\n")
+        result = self.build("--overlay", self.workspace)
+        self.assertEqual(1, result.returncode)
+        self.assertFalse(stale.exists())
+        self.assertFalse(stale_link.is_symlink())
+        self.assertFalse(dangling_link.is_symlink())
+        self.assertFalse(empty.exists())
+        self.assertEqual(current, self.output.resolve())
+        for target in [unmarked, foreign, outside, alias]:
+            self.assertEqual("preserve this target", (target / "keep.txt").read_text())
+
+    def test_killed_builds_are_reclaimed_on_next_run(self):
+        self.assert_success(self.build())
+        for phase in ["copy", "publish"]:
+            with self.subTest(phase=phase):
+                previous = self.output.resolve()
+                fault = """
+import os
+import signal
+import sys
+from pathlib import Path
+from scripts import skills_tree as tree
+
+def kill(*args, **kwargs):
+    if sys.argv[3] == "copy":
+        original_copy(*args, **kwargs)
+    os.kill(os.getpid(), signal.SIGKILL)
+
+original_copy = tree.shutil.copytree
+if sys.argv[3] == "copy":
+    tree.shutil.copytree = kill
+else:
+    tree.os.replace = kill
+tree.build_tree(Path(sys.argv[1]), [], Path(sys.argv[2]))
+"""
+                result = subprocess.run(
+                    [sys.executable, "-c", fault, str(self.base), str(self.output), phase],
+                    cwd=SCRIPT.parent.parent,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                self.assertEqual(-9, result.returncode, result.stderr)
+                self.assertEqual(previous, self.output.resolve())
+                stale = [p for p in self.root.glob(".output.build-*") if p != previous]
+                self.assertTrue(stale)
+                if phase == "publish":
+                    self.assertTrue(any(p.is_symlink() for p in stale))
+                self.assert_success(self.build())
+                self.assertTrue(all(not p.exists() and not p.is_symlink() for p in stale))
+                self.assertEqual(1, len(list(self.root.glob(".output.build-*"))))
+
+    def test_published_generation_is_readable_by_other_users(self):
+        self.assert_success(self.build())
+        self.assertEqual(0o755, self.output.stat().st_mode & 0o777)
 
     def test_output_cannot_overlap_inputs(self):
         result = self.run_cli("build", "--base", self.base, "--output", self.base / "output")

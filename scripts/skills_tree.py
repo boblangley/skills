@@ -224,21 +224,65 @@ def merge_overlay(stage: Path, overlay: Overlay) -> None:
             raise ValueError(f"{skill}: a new skill must include SKILL.md")
 
 
+def generation_name(output: Path, candidate: Path) -> bool:
+    return candidate.parent == output.parent and bool(
+        re.fullmatch(re.escape(f".{output.name}.build-") + r"[a-zA-Z0-9_-]+", candidate.name)
+    )
+
+
+def owns_generation(output: Path, candidate: Path) -> bool:
+    if not generation_name(output, candidate) or candidate.is_symlink() or not candidate.is_dir():
+        return False
+    marker = candidate / ".skills-build.json"
+    if marker.is_symlink():
+        return False
+    try:
+        metadata = json.loads(marker.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return isinstance(metadata, dict) and metadata.get("output") == str(output)
+
+
 def previous_build(output: Path) -> Path | None:
     if not output.is_symlink():
         if output.exists():
             raise ValueError(f"{output}: output must be absent or a symlink managed by this build")
         return None
-    previous = output.resolve(strict=True)
-    marker = previous / ".skills-build.json"
-    if (
-        previous.parent != output.parent
-        or not previous.name.startswith(f".{output.name}.build-")
-        or not marker.is_file()
-        or json.loads(marker.read_text(encoding="utf-8")).get("output") != str(output)
-    ):
+    # Inspect the link itself: resolve(strict=True) would prevent dangling-link recovery.
+    previous = Path(os.path.abspath(output.parent / os.readlink(output)))
+    if not generation_name(output, previous) or previous.is_symlink():
+        raise ValueError(f"{output}: refusing to replace an unmanaged symlink")
+    if not previous.exists():
+        return None  # Only a missing sibling with a managed generation name is recoverable.
+    if not owns_generation(output, previous):
         raise ValueError(f"{output}: refusing to replace an unmanaged symlink")
     return previous
+
+
+def cleanup_stale_builds(output: Path, current: Path | None) -> None:
+    """Called under the publisher lock; never follow a stale symlink or remove foreign data."""
+    for candidate in sorted(output.parent.iterdir()):
+        if candidate == current:
+            continue
+        try:
+            if candidate.name.endswith(".link") and generation_name(
+                output, candidate.with_name(candidate.name[:-5])
+            ):
+                if candidate.is_symlink():
+                    candidate.unlink()
+            elif owns_generation(output, candidate):
+                shutil.rmtree(candidate)
+            elif (
+                generation_name(output, candidate)
+                and candidate.is_dir()
+                and not candidate.is_symlink()
+            ):
+                # A kill between mkdtemp and marker creation can leave only an empty directory.
+                # rmdir removes no content; leave unmarked nonempty directories for the caller.
+                if not any(candidate.iterdir()):
+                    candidate.rmdir()
+        except OSError as exc:
+            print(f"Warning: could not remove stale build {candidate}: {exc}", file=sys.stderr)
 
 
 def build_tree(base: Path, overlays: list[Overlay], output: Path) -> None:
@@ -256,10 +300,14 @@ def build_tree(base: Path, overlays: list[Overlay], output: Path) -> None:
     with (output.parent / f".{output.name}.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         previous = previous_build(output)
+        cleanup_stale_builds(output, previous)
         stage = Path(tempfile.mkdtemp(prefix=f".{output.name}.build-", dir=output.parent))
         link = stage.with_name(stage.name + ".link")
         published = False
         try:
+            # Establish ownership before copying, so a later build can reclaim an interrupted stage.
+            marker = {"output": str(output)}
+            (stage / ".skills-build.json").write_text(json.dumps(marker) + "\n", encoding="utf-8")
             for skill in skill_folders(base):
                 for source in [skill, *skill.rglob("*")]:
                     if source.is_symlink():
@@ -270,8 +318,7 @@ def build_tree(base: Path, overlays: list[Overlay], output: Path) -> None:
             errors = check_tree(stage)
             if errors:
                 raise ValueError("built tree failed validation:\n" + "\n".join(errors))
-            marker = {"output": str(output)}
-            (stage / ".skills-build.json").write_text(json.dumps(marker) + "\n", encoding="utf-8")
+            stage.chmod(0o755)
             link.symlink_to(stage.name, target_is_directory=True)
             os.replace(link, output)
             published = True

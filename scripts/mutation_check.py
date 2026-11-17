@@ -53,6 +53,42 @@ MUTATIONS = [
         "BuildTests.test_top_level_readme_metadata_is_ignored",
     ),
     (
+        "generation parent guard",
+        "candidate.parent == output.parent",
+        "True",
+        "BuildTests.test_deletion_guard_refuses_generation_in_another_parent",
+    ),
+    (
+        "generation name guard",
+        're.fullmatch(re.escape(f".{output.name}.build-") + r"[a-zA-Z0-9_-]+", candidate.name)',
+        "True",
+        "BuildTests.test_deletion_guard_refuses_generation_with_wrong_name",
+    ),
+    (
+        "generation marker read guard",
+        "except (OSError, ValueError):\n        return False",
+        "except (OSError, ValueError):\n        return True",
+        "BuildTests.test_deletion_guard_refuses_generation_without_marker",
+    ),
+    (
+        "generation owner guard",
+        'metadata.get("output") == str(output)',
+        "True",
+        "BuildTests.test_deletion_guard_refuses_generation_with_foreign_owner",
+    ),
+    (
+        "stale build cleanup",
+        "        cleanup_stale_builds(output, previous)",
+        "        pass  # MUTANT: do not reclaim interrupted builds",
+        "BuildTests.test_stale_owned_builds_are_cleaned_without_removing_foreign_data",
+    ),
+    (
+        "generation read permissions",
+        "            stage.chmod(0o755)",
+        "            pass  # MUTANT: leave mkdtemp's private permissions",
+        "BuildTests.test_published_generation_is_readable_by_other_users",
+    ),
+    (
         "validation before publication",
         "errors = check_tree(stage)\n            if errors:",
         "errors = check_tree(stage)\n            if False:",
