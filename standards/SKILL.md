@@ -1,7 +1,7 @@
 ---
 name: standards
 description: >
-  Use when doing or reviewing work that one of our standards covers, to know the rules it is held to. Covers how design documents, documentation for users and instructions for agents are written, how interfaces are built, what they are built with, what every repository holds, and how the workspace environment is configured. Not for how to do or check the work (`executing`, `review`).
+  Use when doing or reviewing work that one of our standards covers, to know the rules it is held to. Covers how design documents, documentation for users and developers, and instructions for agents are written, how interfaces are built, what they are built with, what every repository holds, and how the workspace environment is configured. Not for how to do or check the work (`executing`, `review`).
 ---
 
 A standard is a rule the work is held to. The executor follows it and the reviewer checks it, so both read the same text here instead of each keeping their own copy.
@@ -9,7 +9,7 @@ A standard is a rule the work is held to. The executor follows it and the review
 Read the standard for the work at hand:
 
 - [Documentation](references/documentation.md): how design documents are written: vision, specifications, technical designs, decision records and the other design documents.
-- [User documentation](references/user-documentation.md): how documentation for the people who use what we build is written: tutorials, how-to guides, reference and explanation, and how it stays true.
+- [User documentation](references/user-documentation.md): documentation for users of a product and developers who build on it: audiences, tutorials, how-to guides, reference and explanation, generated reference, published links and interface captures.
 - [Instructions for agents](references/instructions.md): how skills, `AGENTS.md` files and briefs to delegates are written, and which home each kind of instruction belongs in.
 - [Interface](references/interface.md): how an interface a person uses is built: usability, accessibility, states, layout, colour, type, motion, copy, and terminal output.
 - [Stack](references/stack.md): what a website or a web application is built with, and the template it starts from.

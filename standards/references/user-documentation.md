@@ -1,21 +1,29 @@
 # User documentation
 
-Read this when writing or reviewing documentation for the people who use what we build: a product, an application, a command line, an API or a library. The README is the front door to it, and is in the [repository standard](repository.md#readmemd). Text inside the interface, such as `--help`, empty states and error messages, is in the [interface standard](interface.md). Design documents, written for whoever builds the thing, are in [documentation](documentation.md).
+Read this when writing or reviewing documentation for users of a product or developers who build on it: an application, a command line, an API or a library. The README is the front door to it, and is in the [repository standard](repository.md#readmemd). Text inside the interface, such as `--help`, empty states and error messages, is in the [interface standard](interface.md). Design documents, written for whoever builds the product itself, are in [documentation](documentation.md).
 
 A reader opens the documentation with one need: to learn, to get a task done, to look up a fact, or to understand. Each page meets one of them, and the documentation as a whole meets all four.
 
+## Audiences and navigation
+
+- **Users use the product.** Installing it, configuring it, running commands and completing work through its interface belong to Users.
+- **Developers write code against the product.** Calling an API, using a library, consuming events and writing a plugin belong to Developers. These readers build on the public contract; contributing to the product's implementation is covered by its contributor and design documentation.
+- **The line is whether the reader writes code against it.** Give a page that serves both audiences to its main reader, and link to it from the other audience. Keep one copy.
+- **Published source lives in `docs/user/`,** including downloadable examples and the images and recordings its pages use. The repository's README links to the published documentation's entry point.
+- **Navigation groups by audience, then kind:** Users and Developers, each with Tutorials, How-to guides, Explanation and Reference for the pages it offers. Each page has one home, and navigation makes it reachable. These are navigation sections; file names and subfolders follow the publishing contract.
+- **The layer above this standard supplies the publishing contract:** where the documentation is published, its metadata and navigation format, and how it is built. Apply that contract together with this standard.
+
 ## Four kinds of page
 
-| Kind | Its reader | It holds | Folder |
-|---|---|---|---|
-| Tutorial | A newcomer learning by doing | A lesson that leads the reader to build something that works | `docs/tutorials/` |
-| How-to guide | A user with a task to finish | The steps that reach one goal | `docs/how-to/` |
-| Reference | A user looking up a fact while working | A complete description of the machinery: every command, option, field, endpoint and error | `docs/reference/` |
-| Explanation | A user stepping back to understand | Why it works the way it does, and how its parts fit together | `docs/explanation/` |
+| Kind | Its reader | It holds |
+|---|---|---|
+| Tutorial | A newcomer learning by doing | A lesson that leads the reader to build something that works |
+| How-to guide | A reader with a task to finish | The steps that reach one goal |
+| Explanation | A reader stepping back to understand | Why it works the way it does, and how its parts fit together |
+| Reference | A reader looking up a fact while working | A complete description of the public machinery: commands, options, fields, endpoints and errors |
 
 - **A page is one kind.** When a tutorial needs a reason, it says it in a sentence and links to the explanation. When a how-to guide needs the full list of options, it links to the reference.
-- **`docs/README.md` is the index.** It lists the pages under the four kinds, and the README links to it.
-- **Each folder holds only its kind.** Design documents share `docs/` in the folders [designing](../../designing/references/documents.md#which-document) gives, and stay out of these four.
+- **Both audiences use the four kinds.** A developer's tutorial teaches through a working integration; a user's tutorial teaches through the product's interface.
 
 ## Tutorials
 
@@ -34,16 +42,16 @@ A reader opens the documentation with one need: to learn, to get a task done, to
 
 ## Reference
 
-- **Generated from the source of truth.** The API reference comes from the specification, such as OpenAPI or JSON Schema. The command-line reference comes from the command's definition, the same source as its `--help`. The configuration reference comes from its schema, and a library's from its doc comments. Hand-written prose goes around what is generated, never in place of it.
-- **The check catches drift.** A task regenerates the reference, and `check` fails when the committed reference differs from what it generates.
+- **Generated from the source of truth.** API, configuration and event reference comes from the raw specification definitions, such as OpenAPI, JSON Schema and proto, placed by [designing](../../designing/references/documents.md). Command-line reference comes from the command's definition, the same source as its `--help`. Library reference comes from public signatures and source doc comments. Hand-written prose goes around what is generated, never in place of it; fix missing descriptions and examples in the generator's inputs.
+- **The check catches drift.** A committed generation task produces the reference reproducibly. The repository's `check` regenerates it and fails on any difference from the committed output, including missing and obsolete pages. It also fails when generation fails. Review checks that changing a definition or doc comment without regenerating makes this check fail.
 - **Its structure follows the product's:** a page for each command, endpoint, resource or module, in the same order and with the same names.
-- **Complete and plain.** Every entry gives its name, type, default, the values it accepts, the errors it raises, and an example. It describes; it does not instruct or recommend.
+- **Complete and plain.** Every public entry is documented. Give its name, type or signature, default, accepted values, errors and example wherever those apply. It describes; it does not instruct or recommend.
 - **The version that added an entry** is marked on the entry when the product has users on more than one version.
 
 ## Explanation
 
 - **It answers why.** The concepts, the model the user works with, the reasons for the design, and the trade-offs that reach the user.
-- **It is written for the user,** in the product's terms. A design document is written for the builder. Explanation links to a decision record only when the reader gains from the whole trade-off.
+- **It is written for its audience,** in the product's terms. Explain the model and trade-offs the reader needs within the published documentation.
 - **It is bounded by its topic.** A page explains one subject, titled as that subject: "How sync resolves conflicts".
 
 ## Writing
@@ -54,11 +62,22 @@ A reader opens the documentation with one need: to learn, to get a task done, to
 - **Commands and code in fenced blocks,** with a language tag. A block the reader copies holds only what they type, with no prompt; its output follows in a block of its own.
 - **Placeholders are visible:** `<api-key>`, with a sentence saying what goes there.
 - **Examples hold.** Every command, request and snippet runs or validates as written, against the version the documentation describes.
-- **Screenshots and recordings are regenerated** by a script committed beside them, as the README's demo is. Nothing the reader needs is only in an image: each image has alternative text, and a step shown in a screenshot is also written out.
 - **Headings in order,** one top-level heading per page, and links between pages relative, so they work wherever the documentation is read. `check` finds broken links.
+
+## Published links
+
+- **Users can learn entirely from the published pages.** Links lead to published user documentation or public product surfaces. Published pages never link into design documents: specifications, technical designs, decision records or other builder documents, including through full source-host URLs. Move the needed explanation into a published explanation page and link to the generated reference for the contract.
+- **Examples are available with the pages.** Put copyable examples and downloadable sample files in `docs/user/`, and validate them against their definitions. A link to an example hidden in a design folder is not a substitute.
+- **Check the published result.** The documentation check resolves page links, fragments, images and downloads as published, and rejects links into design documents. A link that works in the source repository can still leave the published documentation incomplete.
+
+## Show the interface
+
+- **A page about an interface shows it.** Embed screenshots of the relevant graphical or terminal interface and its result. A page describing a workflow also embeds an animated recording of that workflow.
+- **Captures are reproducible.** Commit the scripts and inputs that regenerate screenshots and recordings, with the command and the assets it produces documented in the repository. Use the interface and version the page describes, with synthetic data and no credentials or private content.
+- **The text carries the instructions too.** Give images alternative text and recordings a written description. Write out each action and expected result so the reader can follow without viewing the media.
 
 ## Keeping it true
 
 - **A change ships with its documentation.** A pull request that changes what a user sees or does updates the pages it affects, and review checks it.
 - **The documentation lives with what it describes:** a component's in its repository, and pages spanning several components in the product repository, as [designing](../../designing/references/documents.md#where-it-goes) places design documents.
-- **What renders it is chosen for each product.** The source is the pages in `docs/`, whatever publishes them.
+- **Published output is verified with its pages.** Run reference generation, link and example checks, and the capture scripts affected by the change before review.

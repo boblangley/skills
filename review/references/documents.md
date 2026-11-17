@@ -33,8 +33,11 @@ A design is reviewed before anything is built on it, when a miss costs least to 
 Documentation for users is held to the [user documentation standard](../../standards/references/user-documentation.md), and checked as follows.
 
 - **Walk it as its reader.** Follow a tutorial or a how-to guide in a clean environment, exactly as written. Each step that fails, or that needs knowledge the page does not give, is a finding.
-- **Each page is one kind.** A tutorial that lists options, or a how-to guide that stops to explain, is a finding.
-- **The reference matches the product.** The generated reference is current, and every command, option, field and error the change adds appears in it.
+- **Each page has an audience and kind.** Navigation groups Users and Developers, then the four page kinds. The main reader determines where a shared topic lives, with a link from the other audience. A tutorial that lists options, or a how-to guide that stops to explain, is a finding.
+- **The reference matches the product.** It is generated from raw specification definitions or public source signatures and doc comments, and covers every public entry affected by the change. Run the drift check; change an input without regenerating and confirm that it fails, then restore the input. Missing and obsolete generated pages are drift too.
+- **Published links keep the reader in user documentation and public surfaces.** Inspect the rendered links, including full source-host URLs: any link into a design document is a finding. Page links, fragments, images and downloadable examples resolve in the published output.
+- **The interface is shown.** Pages about an interface embed screenshots; pages describing a workflow also embed an animated recording. Run the committed capture scripts affected by the change and compare the output with the page. Instructions and expected results remain readable without the media.
+- **Examples reach the reader.** Examples live with the published source in `docs/user/` and validate against their definitions.
 - **The change brought its pages.** Compare the diff with the documentation: behaviour a user sees or does that changed without its pages changing is a finding.
 
 ## Instructions for agents

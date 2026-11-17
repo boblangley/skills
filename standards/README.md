@@ -6,7 +6,7 @@ The rules our work is held to. The agent doing the work follows them, and the ag
 |---|---|
 | [SKILL.md](SKILL.md) | Which standard covers the work, and what to do when one is missing |
 | [references/documentation.md](references/documentation.md) | How design documents are worded |
-| [references/user-documentation.md](references/user-documentation.md) | How documentation for users is written: its four kinds of page, reference generated from the source, and keeping it true |
+| [references/user-documentation.md](references/user-documentation.md) | Documentation for users and developers: audience and page kind, generated reference, published links and reproducible interface captures |
 | [references/instructions.md](references/instructions.md) | How skills, `AGENTS.md` files and briefs to delegates are written |
 | [references/interface.md](references/interface.md) | How an interface a person uses is built: usability, accessibility, states, layout, colour, type, motion, copy, platforms and terminal tools |
 | [references/stack.md](references/stack.md) | What websites and web applications are built with, and the template a site starts from |
@@ -31,6 +31,8 @@ The standards are written in our own words. These works shaped them; nothing is 
 | [Leonxlnx/cook](https://github.com/Leonxlnx/cook/tree/b23cac6fd9439dfddcab61b14808e7bf72549b46) | MIT | Interface, proving it: shots at fixed framing rendered beside their references, a score for each dimension, critics who see only the shots and the rubric, and every number marked as measured or judged. |
 | [benjitaylor/skills](https://github.com/benjitaylor/skills/tree/299140fafd08df55a9c234e610c3f64af3f45531/stageshow): `stageshow` | MIT | Interface, proving it: a handover that says what was not checked. |
 | [Diátaxis](https://github.com/evildmp/diataxis-documentation-framework/tree/957c09ca40b4a1edc23874f713e01937d50d54d5/source), by Daniele Procida | CC-BY-SA-4.0 | User documentation: the four kinds of page and the reader each serves; a tutorial as a lesson on one reliable path with visible results and little explanation; how-to guides titled by their goal; reference that describes and follows the structure of the machinery; explanation bounded by its subject. |
+| [wyrd-company/deck](https://github.com/wyrd-company/deck/tree/2ed4796f22c8bac154239b0e5134ab3b5d75d002/docs): `user/`, `AGENTS.md`, `demo/` | Apache-2.0 | User documentation: links from published pages into design documents as the failure to prevent; examples available with the user pages; interface recordings reproduced from committed scripts and inputs. |
+| [wyrd-company/t3code-client](https://github.com/wyrd-company/t3code-client/tree/1fd2f4da1964bd41b6b6155a819fb1bac6f6822c): `Taskfile.yml`, `packages/t3code-lib/Taskfile.yml`, `packages/t3code-lib/scripts/reference.mjs`, `docs/user/t3c/library-*.md` | MIT | User documentation: public library reference generated from exported signatures and source doc comments, missing comments rejected, and generated output compared by a check included in the repository's checks. |
 | [google-labs-code/design.md](https://github.com/google-labs-code/design.md) | Apache-2.0 | Interface: the `DESIGN.md` linter as one of the checks. |
 
 The documentation standard comes from our earlier `authoring-specifications` skill, the repository standard from our earlier drafts of it and the files in our repositories, the workspace standard from our own workspace repositories, and the stack from our own templates and choices. None has an outside source.
