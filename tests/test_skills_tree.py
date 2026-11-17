@@ -5,8 +5,9 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from scripts.skills_tree import check_tree
+from scripts.skills_tree import build_tree, check_tree
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "skills_tree.py"
 
@@ -226,6 +227,42 @@ class BuildTests(TreeFixture):
         self.assertTrue(self.output.is_symlink())
         self.assertFalse(previous.exists())
         self.assertIn("new text", (self.output / "alpha/SKILL.md").read_text())
+        self.assertEqual(1, len(list(self.root.glob(".output.build-*"))))
+
+    def test_publication_error_preserves_previous_output_and_cleans_stage(self):
+        self.assert_success(self.build())
+        previous = self.output.readlink()
+        content = (self.output / "alpha/SKILL.md").read_bytes()
+        with patch("scripts.skills_tree.os.replace", side_effect=OSError("publication failed")):
+            with self.assertRaisesRegex(OSError, "publication failed"):
+                build_tree(self.base, [], self.output)
+        self.assertEqual(previous, self.output.readlink())
+        self.assertEqual(content, (self.output / "alpha/SKILL.md").read_bytes())
+        self.assertEqual(1, len(list(self.root.glob(".output.build-*"))))
+
+    def test_concurrent_builds_leave_one_complete_generation(self):
+        self.write("workspace/alpha/SKILL.md", "workspace\n")
+        command = [
+            sys.executable,
+            str(SCRIPT),
+            "build",
+            "--base",
+            str(self.base),
+            "--output",
+            str(self.output),
+            "--overlay",
+            str(self.workspace),
+        ]
+        first = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        second = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        for process in [first, second]:
+            stdout, stderr = process.communicate(timeout=30)
+            self.assertEqual(0, process.returncode, stderr)
+            self.assertIn("PASS:", stdout)
+        self.assertEqual([], check_tree(self.output))
+        self.assertIn("workspace", (self.output / "alpha/SKILL.md").read_text())
         self.assertEqual(1, len(list(self.root.glob(".output.build-*"))))
 
     def test_invalid_inputs_and_unmanaged_outputs_are_preserved(self):

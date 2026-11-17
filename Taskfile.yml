@@ -1,0 +1,76 @@
+version: "3"
+
+tasks:
+  default:
+    desc: List the tasks
+    cmds:
+      - task --list
+    silent: true
+
+  tools:
+    desc: Install the locked Python dependencies
+    cmds:
+      - uv sync --frozen
+    run: once
+
+  hooks:install:
+    desc: Install the git hooks in this checkout
+    cmds:
+      - lefthook install
+
+  test:
+    desc: Run the full fixture test suite (pass unittest filters after --)
+    deps: [tools]
+    cmds:
+      - uv run --frozen python -m unittest discover -s tests -v {{.CLI_ARGS}}
+
+  test:mutations:
+    desc: Prove the checker and build guards by breaking them
+    deps: [tools]
+    cmds:
+      - uv run --frozen python scripts/mutation_check.py
+
+  lint:
+    desc: Check code, Markdown, YAML and formatting without changing files
+    deps: [tools]
+    cmds:
+      - uv run --frozen ruff check scripts tests
+      - uv run --frozen ruff format --check scripts tests
+      - uv run --frozen python scripts/quality.py lint
+      - git diff --check
+
+  lint:commit-msg:
+    desc: Check a commit message follows Conventional Commits
+    deps: [tools]
+    cmds:
+      - uv run --frozen python scripts/quality.py commit-msg {{.CLI_ARGS}}
+
+  format:
+    desc: Format Python and Markdown files
+    deps: [tools]
+    cmds:
+      - uv run --frozen ruff check --fix scripts tests
+      - uv run --frozen ruff format scripts tests
+      - uv run --frozen python scripts/quality.py format
+
+  skills:check:
+    desc: Check a skills tree (TREE defaults to this repository)
+    deps: [tools]
+    vars:
+      TREE: '{{default "." .TREE}}'
+    cmds:
+      - uv run --frozen python scripts/skills_tree.py check {{.TREE | shellQuote}}
+
+  build:
+    desc: Build overlays (--base BASE --output OUTPUT [--overlay DIR] [--project PATH DIR])
+    deps: [tools]
+    cmds:
+      - uv run --frozen python scripts/skills_tree.py build {{.CLI_ARGS}}
+
+  check:
+    desc: Run all checks before pushing
+    cmds:
+      - task: lint
+      - task: skills:check
+      - task: test
+      - task: test:mutations
