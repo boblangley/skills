@@ -16,7 +16,7 @@ Read the standard for the work at hand:
 - [Repository](references/repository.md): what every repository holds, and the templates it starts from: its README, `AGENTS.md`, `CONTRIBUTING.md`, license, automation with Task and Lefthook, configuration and layout, and how a fork is treated.
 - [Workspace](references/workspace.md): making project and repo folders and their T3 Code projects, fitting one workspace to its needs, where configuration shared by every workspace belongs, how it is applied, and how a change to it is made to last.
 
-A repository's own `AGENTS.md` and docs win over a standard here for that repository.
+When instructions conflict, apply them in this order: the repository's own `AGENTS.md` and docs, then its project's skill overlays, then the workspace's skill overlays, then the base skill or standard. Apply each overlay rule within the workspace or project it names.
 
 ## Gaps
 

@@ -1,18 +1,18 @@
 # standards
 
-The rules our work is held to. The agent doing the work follows them, and the agent reviewing it checks them, so both read the same text instead of keeping their own copies. The skill is not a process: `executing` and `review` say how to do and check the work. A repository's own `AGENTS.md` and docs win over these standards for that repository.
+The rules our work is held to. The agent doing the work follows them, and the agent reviewing it checks them, so both read the same text instead of keeping their own copies. The skill is not a process: `executing` and `review` say how to do and check the work. [SKILL.md](SKILL.md) gives the order of precedence for repository instructions, project and workspace overlays, and base standards.
 
 | File | What it is for |
 |---|---|
 | [SKILL.md](SKILL.md) | Which standard covers the work, and what to do when one is missing |
 | [references/documentation.md](references/documentation.md) | How design documents are worded |
 | [references/user-documentation.md](references/user-documentation.md) | Documentation for users and developers: audience and page kind, generated reference, published links and reproducible interface captures |
-| [references/instructions.md](references/instructions.md) | How skills, `AGENTS.md` files and briefs to delegates are written |
+| [references/instructions.md](references/instructions.md) | How skills, workspace and project overlays, `AGENTS.md` files and briefs to delegates are written, and where instructions belong |
 | [references/interface.md](references/interface.md) | How an interface a person uses is built: usability, accessibility, states, layout, colour, type, motion, copy, platforms and terminal tools |
 | [references/stack.md](references/stack.md) | What websites and web applications are built with, and the template a site starts from |
 | [references/repository.md](references/repository.md) | What every repository holds: its README, `AGENTS.md`, `CONTRIBUTING.md`, license, automation with Task and Lefthook, configuration and layout, and how a fork is treated |
 | [assets/repository/](assets/repository/) | Templates for those files |
-| [references/workspace.md](references/workspace.md) | How the workspace environment is configured, and fitted to one workspace's needs |
+| [references/workspace.md](references/workspace.md) | How the workspace environment is configured and fitted to one workspace's needs, including overlay folders and `skills sync` |
 
 ## Sources
 
@@ -20,6 +20,9 @@ The standards are written in our own words. These works shaped them; nothing is 
 
 | Source | License | What we drew on |
 |---|---|---|
+| [wyrd-company/workspace-dotfiles](https://github.com/wyrd-company/workspace-dotfiles/tree/2556147414af6a11afbb2f25edb722ffa885a913): `docs/skills.md`, `dot_local/bin/executable_skills` | MIT | Instructions and workspace: overlay discovery and order, project scope within the shared view, source worktrees, the generated real directory and Claude's links, and rebuilding with `skills sync`. |
+| [wyrd-company/workspace-template](https://github.com/wyrd-company/workspace-template/tree/ec1a9b413a35ba12f1318fe653df3d3c34946996): `README.md`, `docs/workspaces.md`, `docs/devcontainers.md`, `template/.devcontainer/devcontainer.json` | MIT | Workspace: the host's `skills/` folder and its read-write `/skills` mount. |
+| [wyrd-company/workspace-ansible](https://github.com/wyrd-company/workspace-ansible/tree/b86b707a9559a9b4c168e39ea4d1315afd0528f8): `toha/project/template/AGENTS.md`, `toha/project/template/.skills/AGENTS.md` | MIT | Instructions and workspace: the project's `.skills/` folder and its folder instructions. |
 | [dembrandt/dembrandt-skills](https://github.com/dembrandt/dembrandt-skills/tree/8f78f13f74a2356326d0c3c21bc63e5624e6a457/skills) | MIT | Interface: most of the concrete rules. Feedback and loading, states, overlays, forms and errors, status colours, information architecture and navigation, layout, density and alignment, tables, type scale, colour palettes and themes, elevation, responsive paradigms, accessibility thresholds and web performance. |
 | [mattpocock/skills](https://github.com/mattpocock/skills/tree/4ae2317ddb22b046e26455e4f9c9b3aaaf62212d/skills/productivity/writing-for-agents): `writing-for-agents` | MIT | Instructions: the description as the pointer that decides when material is read, one trigger per case, what every case needs in `SKILL.md` and the rest behind pointers, a topic kept together, criteria that are checkable and exhaustive, saying what to do rather than what not to, leaving to the environment what it says, and cutting sentences that change nothing. |
 | [obra/superpowers](https://github.com/obra/superpowers/tree/22f0b463e7a5e579904dd6211a520321035526f7/skills): `writing-skills`, `subagent-driven-development` | MIT | Instructions: fitting the form of a rule to the failure, exceptions as their own conditions, no workflow in a description; and for briefs, one task with no history, files named rather than pasted, a fixed shape for what comes back, when to stop, and no delegating onward. |

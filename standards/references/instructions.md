@@ -1,6 +1,6 @@
 # Instructions for agents
 
-Read this when writing or reviewing anything an agent follows: a skill, an `AGENTS.md`, or a brief to a delegate. Its reader follows it literally, on every run, and cannot ask what you meant. A wrong or vague rule repeats in every piece of work that follows it.
+Read this when writing or reviewing anything an agent follows: a skill, an overlay, an `AGENTS.md`, or a brief to a delegate. Its reader follows it literally, on every run, and cannot ask what you meant. A wrong or vague rule repeats in every piece of work that follows it.
 
 ## Every instruction
 
@@ -39,6 +39,14 @@ A skill is a folder: `SKILL.md`, the `references/` it reads when a case calls fo
 - **Script what agents keep rewriting.** When agents write the same code for a skill again and again, or a sequence breaks when done by hand, put a script in `scripts/` and have the skill run it through its interpreter: `bash scripts/x.sh`.
 - **Walk it before you hand it over.** Take a realistic task and follow the skill as its reader would, from the description on. Fix every place where you would stop, guess or loop.
 
+## Skill overlays
+
+Keep shared skills generic. A rule or pointer that holds for one workspace or project, and is needed only when a skill is used, belongs in that skill's workspace or project overlay. For example, a project's documentation publishing contract belongs with the documentation standard it extends. Instructions needed for every kind of work in the folder belong in its `AGENTS.md`.
+
+An overlay is read with its skill, so give it only the local rule or pointer and the scope where it applies. Every discovered project overlay is included in the shared view; the agent's current directory does not select one. A rule for one project must say which project it applies to.
+
+An overlay never changes a skill's description. Keep the shared skill's trigger intact; a distinct kind of work needs its own skill. Use [CONTRIBUTING.md](https://github.com/wyrd-company/skills/blob/main/CONTRIBUTING.md#building-overlays-the-interface-for-skills-sync) for the overlay layout, merge rules and validation, and [Workspace](workspace.md#skill-overlays) for the folders and rebuilding.
+
 ## AGENTS.md
 
 `AGENTS.md` is read by every agent that works in its folder, on every turn. Each line costs that much, so it holds only what applies to all work there:
@@ -47,7 +55,7 @@ A skill is a folder: `SKILL.md`, the `references/` it reads when a case calls fo
 - settled rules about working in it, which every agent there must follow;
 - where to start, and pointers to the documents and skills that matter, each saying when to read it.
 
-A folder whose work differs has its own `AGENTS.md`, which the agent reads with its parents'. A repository's `AGENTS.md` wins over a skill or standard for that repository.
+A folder whose work differs has its own `AGENTS.md`, which the agent reads with its parents'. The [standards skill](../SKILL.md) gives the order of precedence for repository instructions, overlays and base skills.
 
 Each kind of instruction has its own home:
 
@@ -55,6 +63,8 @@ Each kind of instruction has its own home:
 |---|---|
 | A settled rule about working in one repository or folder | That folder's `AGENTS.md` |
 | How to do a kind of task, in any repository | A skill |
+| A rule or pointer for one workspace, needed only when its skill is used | The skill's overlay in `/skills/<skill>/` |
+| A rule or pointer for one project, needed only when its skill is used | The skill's overlay in `<project>/.skills/<skill>/` |
 | A rule the work is held to, shared by executor and reviewer | A standard in `standards` |
 | Something learned and not yet settled, or knowledge across repositories | Memory, as an observation |
 | A rule a program can check | A check: a linter, a hook, a test |

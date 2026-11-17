@@ -29,6 +29,21 @@ Decide first who needs the change.
 
 Both templates call `ensure-t3-project`, which registers a folder only when no T3 project has it yet. Run it to repair a folder made before the templates did this; its options are in the header of `/usr/local/bin/ensure-t3-project`. A T3 project belongs to the project folder or the repo folder, never to a worktree inside one.
 
+## Skill overlays
+
+Use a [skill overlay](instructions.md#skill-overlays) for instructions that hold for this workspace or one project and are needed only when that skill is used.
+
+| Scope | Folder |
+|---|---|
+| Workspace | `/skills/`, the read-write mount of `${localWorkspaceFolder}/skills` on the host, created by `workspace-template` |
+| Project | `<project>/.skills/`, created by `workspace-ansible`'s project template; projects are the immediate folders under `/workspace/` |
+
+The project folder is `.skills/` because its sibling `skills/` may be a repository named `skills`. A top-level `AGENTS.md` in an overlay folder gives agents that folder's instructions; it is not included in the build. The [build contract](https://github.com/wyrd-company/skills/blob/main/CONTRIBUTING.md#building-overlays-the-interface-for-skills-sync) owns the overlay layout, merge rules, ignored metadata and validation.
+
+After editing an overlay, run `skills sync`. It updates the clean base clone at `~/.local/share/skills/base`, builds the base followed by `/skills/`, then each existing `/workspace/*/.skills/` in project-path order, and publishes the shared view. Every project's overlay is included, so keep each rule scoped to its project. The [standards skill](../SKILL.md) gives the order of precedence when instructions conflict.
+
+Codex and Pi read `~/.agents/skills/`, a generated real directory. Claude Code's per-skill links point into that same view. Each sync replaces edits to the view, including edits through Claude's links. Make shared skill changes in worktrees of `~/.local/share/skills/base`, keeping its `main` clean for fast-forward updates; make local changes in the overlay folders above. The dotfiles' [Skills guide](https://github.com/wyrd-company/workspace-dotfiles/blob/main/docs/skills.md) owns sync discovery, publication, failure recovery and migration.
+
 ## Where configuration belongs
 
 `workspace-ansible` and `workspace-dotfiles` configure the same workspace, split by who owns the configuration:

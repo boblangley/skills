@@ -68,7 +68,7 @@ task --dir /absolute/path/to/base build -- \
   --base /absolute/path/to/base \
   --output /absolute/path/to/generated/skills \
   --overlay /absolute/path/to/workspace-overlay \
-  --project /absolute/path/to/project /absolute/path/to/project/skills
+  --project /absolute/path/to/project /absolute/path/to/project/.skills
 ```
 
 `--overlay FOLDER` and `--project PATH FOLDER` may each repeat; they are applied in argument order after the base. For workspace-then-project precedence, pass the workspace overlay first. `PATH` is the absolute project path used as the heading, and may contain spaces when quoted. All filesystem arguments are relative to the Taskfile directory unless absolute, so callers should pass absolute paths.
