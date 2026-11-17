@@ -28,6 +28,15 @@ A design is reviewed before anything is built on it, when a miss costs least to 
 - **Its trade-offs are real.** Where it accepts a compromise as unavoidable, ask whether it is. A finding here proposes the alternative and says what the alternative costs.
 - **An interface design names its states and its visual language.** Every state of every view is designed, and a `DESIGN.md` passes `npx @google/design.md lint` with no errors and no contrast warnings ([interface](../../designing/references/interface.md)).
 
+## User documentation
+
+Documentation for users is held to the [user documentation standard](../../standards/references/user-documentation.md), and checked as follows.
+
+- **Walk it as its reader.** Follow a tutorial or a how-to guide in a clean environment, exactly as written. Each step that fails, or that needs knowledge the page does not give, is a finding.
+- **Each page is one kind.** A tutorial that lists options, or a how-to guide that stops to explain, is a finding.
+- **The reference matches the product.** The generated reference is current, and every command, option, field and error the change adds appears in it.
+- **The change brought its pages.** Compare the diff with the documentation: behaviour a user sees or does that changed without its pages changing is a finding.
+
 ## Instructions for agents
 
 Skills, briefs, `AGENTS.md` files and templates are followed literally, by readers who cannot ask the author what was meant. A wrong rule repeats in every piece of work that follows it. They are held to the [instructions standard](../../standards/references/instructions.md), and checked as follows.

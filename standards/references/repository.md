@@ -115,7 +115,7 @@ Start from the ignore file for the repository's stack in [github/gitignore](http
 
 | Path | Holds |
 |---|---|
-| `docs/` | The project's documentation. Design documents go in the folders [designing](../../designing/references/documents.md#where-it-goes) gives. |
+| `docs/` | The project's documentation. Design documents go in the folders [designing](../../designing/references/documents.md#where-it-goes) gives, and documentation for users in the folders the [user documentation standard](user-documentation.md#four-kinds-of-page) gives. |
 | `docs/terms/` | The glossary's terms |
 | `tests/` | Tests, unless the stack expects them somewhere else, such as Go's files beside the code |
 | `scripts/` | Python scripts the repository runs for itself |

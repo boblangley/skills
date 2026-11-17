@@ -6,6 +6,7 @@ The rules our work is held to. The agent doing the work follows them, and the ag
 |---|---|
 | [SKILL.md](SKILL.md) | Which standard covers the work, and what to do when one is missing |
 | [references/documentation.md](references/documentation.md) | How design documents are worded |
+| [references/user-documentation.md](references/user-documentation.md) | How documentation for users is written: its four kinds of page, reference generated from the source, and keeping it true |
 | [references/instructions.md](references/instructions.md) | How skills, `AGENTS.md` files and briefs to delegates are written |
 | [references/interface.md](references/interface.md) | How an interface a person uses is built: usability, accessibility, states, layout, colour, type, motion, copy, platforms and terminal tools |
 | [references/stack.md](references/stack.md) | What websites and web applications are built with, and the template a site starts from |
@@ -29,6 +30,7 @@ The standards are written in our own words. These works shaped them; nothing is 
 | [emilkowalski/skills](https://github.com/emilkowalski/skills/tree/5206a950b715e0cabe7043ea0b2304332b91494e/skills/animate) | MIT | Interface: motion. Its purpose, duration and easing, no animation on frequent actions, and interruption. |
 | [Leonxlnx/cook](https://github.com/Leonxlnx/cook/tree/b23cac6fd9439dfddcab61b14808e7bf72549b46) | MIT | Interface, proving it: shots at fixed framing rendered beside their references, a score for each dimension, critics who see only the shots and the rubric, and every number marked as measured or judged. |
 | [benjitaylor/skills](https://github.com/benjitaylor/skills/tree/299140fafd08df55a9c234e610c3f64af3f45531/stageshow): `stageshow` | MIT | Interface, proving it: a handover that says what was not checked. |
+| [Diátaxis](https://github.com/evildmp/diataxis-documentation-framework/tree/957c09ca40b4a1edc23874f713e01937d50d54d5/source), by Daniele Procida | CC-BY-SA-4.0 | User documentation: the four kinds of page and the reader each serves; a tutorial as a lesson on one reliable path with visible results and little explanation; how-to guides titled by their goal; reference that describes and follows the structure of the machinery; explanation bounded by its subject. |
 | [google-labs-code/design.md](https://github.com/google-labs-code/design.md) | Apache-2.0 | Interface: the `DESIGN.md` linter as one of the checks. |
 
 The documentation standard comes from our earlier `authoring-specifications` skill, the repository standard from our earlier drafts of it and the files in our repositories, the workspace standard from our own workspace repositories, and the stack from our own templates and choices. None has an outside source.
