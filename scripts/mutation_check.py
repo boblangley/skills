@@ -126,6 +126,12 @@ MUTATIONS = [
         "BuildTests.test_identical_non_markdown_collision_is_refused",
     ),
     (
+        "input preservation during generation cleanup",
+        "if any(generation_name(output, parent) for parent in [source, *source.parents]):",
+        "if False:",
+        "BuildTests.test_inputs_in_managed_generation_namespace_are_preserved",
+    ),
+    (
         "validation before publication",
         "errors = check_tree(stage)\n            if errors:",
         "errors = check_tree(stage)\n            if False:",

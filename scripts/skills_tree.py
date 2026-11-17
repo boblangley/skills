@@ -293,6 +293,8 @@ def build_tree(base: Path, overlays: list[Overlay], output: Path) -> None:
     for source in [base, *(item.folder for item in overlays)]:
         if not source.is_dir():
             raise ValueError(f"{source}: expected a directory")
+        if any(generation_name(output, parent) for parent in [source, *source.parents]):
+            raise ValueError(f"{source}: input overlaps managed build state for {output}")
         if output.is_relative_to(source) or source.is_relative_to(output):
             raise ValueError(f"{output}: output must be separate from every input tree")
     output.parent.mkdir(parents=True, exist_ok=True)

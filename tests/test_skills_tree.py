@@ -518,6 +518,22 @@ tree.build_tree(Path(sys.argv[1]), [], Path(sys.argv[2]))
                 self.assertTrue(all(not p.exists() and not p.is_symlink() for p in stale))
                 self.assertEqual(1, len(list(self.root.glob(".output.build-*"))))
 
+    def test_inputs_in_managed_generation_namespace_are_preserved(self):
+        self.assert_success(self.build())
+        current = self.output.resolve()
+        stale = self.generation(name=".output.build-source")
+        (stale / "alpha").mkdir()
+        (stale / "alpha/SKILL.md").write_text("# Source\n", encoding="utf-8")
+        for source in [stale, current]:
+            with self.subTest(source=source.name):
+                content = (source / "alpha/SKILL.md").read_text()
+                result = self.run_cli("build", "--base", source, "--output", self.output)
+                self.assertTrue(source.exists(), "build must not remove an input tree")
+                self.assertEqual(content, (source / "alpha/SKILL.md").read_text())
+                self.assertEqual(1, result.returncode)
+                self.assertIn("input overlaps managed build state", result.stderr)
+                self.assertEqual(current, self.output.resolve())
+
     def test_published_generation_is_readable_by_other_users(self):
         self.assert_success(self.build())
         self.assertEqual(0o755, self.output.stat().st_mode & 0o777)
