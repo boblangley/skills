@@ -36,7 +36,7 @@ One design document is not YAML: a product's visual language is `DESIGN.md`, in 
 | What users are trying to get done | `job-to-be-done` | `jobs/`, in the product repository | `description`, the job statement; the job map; `outcomes`, ranked |
 | Who the users are | `persona` | `personas/`, in the product repository | `description`, `goals`, `frustrations` |
 | The domain: its commands, its events, and where consistency is enforced | `domain-model` | `domain-models/` | `description`, `aggregates` |
-| A contract that implementations conform to: an API, a format, a command line | `specification` | `specifications/` | `description`, `format`, `validation-criteria`; the definition itself is an asset in its native format, such as OpenAPI or JSON Schema |
+| A contract that implementations conform to: an API, a format, a command line | `specification` | `specifications/` | `description`, `format`, `validation-criteria`; its raw definition sits beside the `.yml`, sharing its slug, as [below](#specification-definitions) |
 | How it will be built | `technical-design` | `technical-designs/` | `objective`, `background`, `design-challenges`, `proposed-design` |
 | What a user can do, as scenarios | `feature` | `features/` | `world-schema`, `background`, `rules`, `scenarios` |
 | What a module's public contract guarantees, as scenarios | `behavior` | `behaviors/` | `world-schema`, `background`, `scenarios` |
@@ -46,6 +46,25 @@ One design document is not YAML: a product's visual language is `DESIGN.md`, in 
 | A threat to the outcome | `risk` | `risks/` | `slug`, `title`, `description`, `categories`, `likelihood` and `impact` from 1 to 5, the response, `status` |
 | A word with one meaning here | `term` | `terms/` | `title`, `description` |
 | A product's visual language and its tokens | `DESIGN.md` | The repository root | Tokens in the front matter; sections in the order the [format](https://github.com/google-labs-code/design.md/blob/main/docs/spec.md) sets |
+
+## Specification definitions
+
+A specification has a design document at `docs/specifications/<slug>.yml` and its raw definition beside it, in the definition's native format. The definition's filename starts with the same slug, followed by its format and version suffix where needed:
+
+```text
+docs/specifications/configuration.yml
+docs/specifications/configuration.schema.v1.json
+docs/specifications/http-api.yml
+docs/specifications/http-api.openapi.yml
+docs/specifications/events.yml
+docs/specifications/events.proto
+```
+
+- **The `.yml` describes the contract; the raw file defines it.** The design document identifies its definition files and how conformance is checked. Generators and validators read the raw definition.
+- **Definitions stay beside their specification, with no `assets/` folder.** When a specification has several definition files, each starts with its slug and a distinguishing name, such as `configuration.client.schema.v1.json` and `configuration.service.schema.v1.json` beside `configuration.yml`.
+- **Examples belong in the user documentation,** under `docs/user/`, where readers can copy or download them. Validate them against the raw definition as the [user documentation standard](../../standards/references/user-documentation.md#published-links) requires. Tests use those same files when they need valid examples.
+- **Invalid fixtures belong in tests,** in the repository's test layout, with assertions for the validation errors they exercise.
+- **Published reference is generated from the definitions.** Its pages live with the user documentation; published pages link to that reference as the [user documentation standard](../../standards/references/user-documentation.md#reference) requires.
 
 ## Decisions land where they shape the work
 

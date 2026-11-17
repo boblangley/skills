@@ -12,7 +12,7 @@ Read this when the work is prose: documentation, a design, a specification, or i
 
 - **Truth:** each claim about the system matches the system. Read the code or run the command; do not trust the document's own word. A claim about tested behaviour matches its test.
 - **Completeness for its reader:** each term is defined or linked, and nothing assumes a prerequisite the reader does not have. Read from where its reader starts, not from where you start.
-- **One source:** it refers to the specification instead of restating it. Two copies of a rule will disagree.
+- **One source:** each contract has one authoritative definition. Other documents link to it or to its generated reference instead of copying it. Published user pages use the generated reference. Two copies of a rule will disagree.
 - **Calibration:** each claim is as strong as its evidence. Each caveat names the decision it affects, or it goes.
 - **Economy:** cut what the reader does not need. A sentence that changes nothing is a cost every reader pays.
 - **Structure:** it follows the template or standard it is held to, and its headings let a reader find the part they need.
@@ -22,6 +22,7 @@ Read this when the work is prose: documentation, a design, a specification, or i
 A design is reviewed before anything is built on it, when a miss costs least to fix. It is held to the [documentation standard](../../standards/references/documentation.md) as well as to what follows.
 
 - **Its questions are answered.** Check it against its template or the issue: every question it must settle is settled.
+- **A specification's definition sits beside it.** Check the [specification layout](../../designing/references/documents.md#specification-definitions): metadata and raw definitions share a slug in `docs/specifications/`, with no `assets/` folder. Examples are in `docs/user/` and validate against the definition; invalid fixtures are in tests with the errors they exercise asserted.
 - **Its assumptions are justified.** A claim about behaviour, performance or a constraint that the design rests on has evidence, or is marked as an assumption to test.
 - **Its failure modes are named:** what happens on error, under load, at the limits, and with an attacker.
 - **It can be built.** An implementer can start without making a design decision of their own: a storage choice, an interface, an error strategy. Each one left open is a finding.

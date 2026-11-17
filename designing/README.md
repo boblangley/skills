@@ -9,7 +9,7 @@ It covers technical design (modules, interfaces, data and state), product design
 | [SKILL.md](SKILL.md) | The steps: frame, chart, write, hand over |
 | [references/framing.md](references/framing.md) | Framing an outcome with the operator |
 | [references/charting.md](references/charting.md) | Resolving the decisions, and decision tasks for large designs |
-| [references/documents.md](references/documents.md) | Which document a decision belongs in, and where it goes |
+| [references/documents.md](references/documents.md) | Which document a decision belongs in, where it goes, and how specification metadata and raw definitions sit together |
 | [references/technical.md](references/technical.md) | Designs that shape code |
 | [references/product.md](references/product.md) | Designs that shape what users get |
 | [references/interface.md](references/interface.md) | Designs that shape an interface, alternatives for a judge to choose from, and `DESIGN.md` |
