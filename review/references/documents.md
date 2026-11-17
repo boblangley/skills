@@ -22,7 +22,7 @@ Read this when the work is prose: documentation, a design, a specification, or i
 A design is reviewed before anything is built on it, when a miss costs least to fix. It is held to the [documentation standard](../../standards/references/documentation.md) as well as to what follows.
 
 - **Its questions are answered.** Check it against its template or the issue: every question it must settle is settled.
-- **A specification's definition sits beside it.** Check the [specification layout](../../designing/references/documents.md#specification-definitions): metadata and raw definitions share a slug in `docs/specifications/`, with no `assets/` folder. Examples are in `docs/user/` and validate against the definition; invalid fixtures are in tests with the errors they exercise asserted.
+- **Check the specification layout** against [designing](../../designing/references/documents.md#specification-definitions), then run the definition's native validator from its module root and confirm that the invalid fixtures produce their asserted errors.
 - **Its assumptions are justified.** A claim about behaviour, performance or a constraint that the design rests on has evidence, or is marked as an assumption to test.
 - **Its failure modes are named:** what happens on error, under load, at the limits, and with an attacker.
 - **It can be built.** An implementer can start without making a design decision of their own: a storage choice, an interface, an error strategy. Each one left open is a finding.
@@ -38,7 +38,7 @@ Documentation for users is held to the [user documentation standard](../../stand
 - **The reference matches the product.** It is generated from raw specification definitions or public source signatures and doc comments, and covers every public entry affected by the change. Run the drift check; change an input without regenerating and confirm that it fails, then restore the input. Missing and obsolete generated pages are drift too.
 - **Published links keep the reader in user documentation and public surfaces.** Inspect the rendered links, including full source-host URLs: any link into a design document is a finding. Page links, fragments, images and downloadable examples resolve in the published output.
 - **The interface is shown.** Pages about an interface embed screenshots; pages describing a workflow also embed an animated recording. Run the committed capture scripts affected by the change and compare the output with the page. Instructions and expected results remain readable without the media.
-- **Examples reach the reader.** Examples live with the published source in `docs/user/` and validate against their definitions.
+- **Check examples** against their definitions and verify that readers can reach them as the [user documentation standard](../../standards/references/user-documentation.md#published-links) requires.
 - **The change brought its pages.** Compare the diff with the documentation: behaviour a user sees or does that changed without its pages changing is a finding.
 
 ## Instructions for agents

@@ -26,6 +26,7 @@ The skill is written in our own words. These works shaped it; nothing is copied 
 | [benjitaylor/skills](https://github.com/benjitaylor/skills/tree/299140fafd08df55a9c234e610c3f64af3f45531/stageshow): `stageshow` | MIT | Interface: the best existing examples as the bar, held beside the work. |
 | `wyrd-company/astro-template`: `design-prototyping` | Ours | Interface: alternatives of style and copy, each at its own address with a switcher, for a judge to choose from. |
 | [mattpocock/skills](https://github.com/mattpocock/skills/tree/4ae2317ddb22b046e26455e4f9c9b3aaaf62212d/skills/engineering): `codebase-design`, `improve-codebase-architecture`, `wayfinder` | MIT | Technical: deep modules and designing it twice. Charting: a design tracked as a map of decision tasks. |
+| [wyrd-company/deck](https://github.com/wyrd-company/deck/tree/2ed4796f22c8bac154239b0e5134ab3b5d75d002/docs): `specifications/assets/grpc-api/deck/v1/deck.proto`, `check.sh` | Apache-2.0 | Specification definitions: preserving the proto package's native tree and filenames under a slug-named module root, verified with the pinned buf build and lint checks. |
 
 Formats and tools the skill uses, rather than drew on:
 

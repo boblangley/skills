@@ -11,7 +11,7 @@ A reader opens the documentation with one need: to learn, to get a task done, to
 - **The line is whether the reader writes code against it.** Give a page that serves both audiences to its main reader, and link to it from the other audience. Keep one copy.
 - **Published source lives in `docs/user/`,** including downloadable examples and the images and recordings its pages use. The repository's README links to the published documentation's entry point.
 - **Navigation groups by audience, then kind:** Users and Developers, each with Tutorials, How-to guides, Explanation and Reference for the pages it offers. Each page has one home, and navigation makes it reachable. These are navigation sections; file names and subfolders follow the publishing contract.
-- **The layer above this standard supplies the publishing contract:** where the documentation is published, its metadata and navigation format, and how it is built. Apply that contract together with this standard.
+- **The layer above this standard supplies the publishing contract:** where the documentation is published, its metadata and navigation format, and how it is built. Apply that contract together with this standard. Without one, follow the repository's existing published documentation; when it has none, ask before choosing where to publish.
 
 ## Four kinds of page
 
@@ -42,7 +42,7 @@ A reader opens the documentation with one need: to learn, to get a task done, to
 
 ## Reference
 
-- **Generated from the source of truth.** API, configuration and event reference comes from the raw specification definitions, such as OpenAPI, JSON Schema and proto, placed by [designing](../../designing/references/documents.md#specification-definitions). Command-line reference comes from the command's definition, the same source as its `--help`. Library reference comes from public signatures and source doc comments. Hand-written prose goes around what is generated, never in place of it; fix missing descriptions and examples in the generator's inputs.
+- **Generated from the source of truth.** API, configuration and event reference comes from the raw specification definitions, such as OpenAPI, JSON Schema and proto, placed by [designing](../../designing/references/documents.md#specification-definitions). Command-line reference comes from the command line's specification definition in the ontology's CLI command specification format, as [interface design](../../designing/references/interface.md#by-platform) requires, placed like the other definitions. Both `--help` and the reference agree with it. Where no specification definition exists yet, generate from the parser's command definitions. Library reference comes from public signatures and source doc comments. Hand-written prose goes around what is generated, never in place of it; fix missing descriptions and examples in the generator's inputs.
 - **The check catches drift.** A committed generation task produces the reference reproducibly. The repository's `check` regenerates it and fails on any difference from the committed output, including missing and obsolete pages. It also fails when generation fails. Review checks that changing a definition or doc comment without regenerating makes this check fail.
 - **Its structure follows the product's:** a page for each command, endpoint, resource or module, in the same order and with the same names.
 - **Complete and plain.** Every public entry is documented. Give its name, type or signature, default, accepted values, errors and example wherever those apply. It describes; it does not instruct or recommend.
@@ -58,7 +58,7 @@ A reader opens the documentation with one need: to learn, to get a task done, to
 
 - **The glossary's words.** Use each term from `docs/terms/` with its one meaning, and the same name the interface shows.
 - **Address the reader** in the present tense and the active voice: "Run `task check`", not "the user should run `task check`". A tutorial says "we", as above.
-- **Describe the current version.** No "new", "now" or "previously" in the prose. The release history is in `CHANGELOG.md`.
+- **Describe the current version.** Leave version comparisons such as "new", "now supports" and "previously" to `CHANGELOG.md`. A tutorial's "we" and "now" guide the learner through its steps.
 - **Commands and code in fenced blocks,** with a language tag. A block the reader copies holds only what they type, with no prompt; its output follows in a block of its own.
 - **Placeholders are visible:** `<api-key>`, with a sentence saying what goes there.
 - **Examples hold.** Every command, request and snippet runs or validates as written, against the version the documentation describes.
@@ -67,6 +67,7 @@ A reader opens the documentation with one need: to learn, to get a task done, to
 ## Published links
 
 - **Users can learn entirely from the published pages.** Links lead to published user documentation or public product surfaces. Published pages never link into design documents: specifications, technical designs, decision records or other builder documents, including through full source-host URLs. Move the needed explanation into a published explanation page and link to the generated reference for the contract.
+- **Publish the definitions developers build against.** Generate copies of raw definitions, such as schemas, OpenAPI and proto, under `docs/user/` alongside the generated reference. Preserve any native tree and relative imports those definitions need. These copies are generated outputs covered by the same drift check, never a second hand-edited source. Readers download or link to the published copies without following a link into a design folder.
 - **Examples are available with the pages.** Put copyable examples and downloadable sample files in `docs/user/`, and validate them against their definitions. A link to an example hidden in a design folder is not a substitute.
 - **Check the published result.** The documentation check resolves page links, fragments, images and downloads as published, and rejects links into design documents. A link that works in the source repository can still leave the published documentation incomplete.
 

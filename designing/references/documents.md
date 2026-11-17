@@ -4,7 +4,7 @@ Read this to choose the document a decision belongs in, and where it goes. How a
 
 ## The format
 
-Design documents are YAML, in the formats of the Refinery ontology. Each opens with its type, and the file name is its slug:
+Design documents are YAML, in the formats of the Refinery ontology. Each opens with its type, and its filename is `<slug>.yml`; a slug contains no dot:
 
 ```yaml
 $schema: https://refinery.systems/ontology/technical-design
@@ -36,7 +36,7 @@ One design document is not YAML: a product's visual language is `DESIGN.md`, in 
 | What users are trying to get done | `job-to-be-done` | `jobs/`, in the product repository | `description`, the job statement; the job map; `outcomes`, ranked |
 | Who the users are | `persona` | `personas/`, in the product repository | `description`, `goals`, `frustrations` |
 | The domain: its commands, its events, and where consistency is enforced | `domain-model` | `domain-models/` | `description`, `aggregates` |
-| A contract that implementations conform to: an API, a format, a command line | `specification` | `specifications/` | `description`, `format`, `validation-criteria`; its raw definition sits beside the `.yml`, sharing its slug, as [below](#specification-definitions) |
+| A contract that implementations conform to: an API, a format, a command line | `specification` | `specifications/` | `description`, `format`, `validation-criteria`; its raw definition shares its slug, as [below](#specification-definitions) |
 | How it will be built | `technical-design` | `technical-designs/` | `objective`, `background`, `design-challenges`, `proposed-design` |
 | What a user can do, as scenarios | `feature` | `features/` | `world-schema`, `background`, `rules`, `scenarios` |
 | What a module's public contract guarantees, as scenarios | `behavior` | `behaviors/` | `world-schema`, `background`, `scenarios` |
@@ -49,20 +49,24 @@ One design document is not YAML: a product's visual language is `DESIGN.md`, in 
 
 ## Specification definitions
 
-A specification has a design document at `docs/specifications/<slug>.yml` and its raw definition beside it, in the definition's native format. The definition's filename starts with the same slug, followed by its format and version suffix where needed:
+A specification has a design document at `docs/specifications/<slug>.yml` and its raw definition beside it, in the definition's native format. The default is one flat file per definition, named `<slug>.<name>.<format>`, with a format or version suffix after the slug:
 
 ```text
 docs/specifications/configuration.yml
 docs/specifications/configuration.schema.v1.json
 docs/specifications/http-api.yml
 docs/specifications/http-api.openapi.yml
-docs/specifications/events.yml
-docs/specifications/events.proto
+docs/specifications/command-line.yml
+docs/specifications/command-line.cli.json
+docs/specifications/grpc-api.yml
+docs/specifications/grpc-api/deck/v1/deck.proto
 ```
 
 - **The `.yml` describes the contract; the raw file defines it.** The design document identifies its definition files and how conformance is checked. Generators and validators read the raw definition.
-- **Definitions stay beside their specification, with no `assets/` folder.** When a specification has several definition files, each starts with its slug and a distinguishing name, such as `configuration.client.schema.v1.json` and `configuration.service.schema.v1.json` beside `configuration.yml`.
-- **Examples belong in the user documentation,** under `docs/user/`, where readers can copy or download them. Validate them against the raw definition as the [user documentation standard](../../standards/references/user-documentation.md#published-links) requires. Tests use those same files when they need valid examples.
+- **Flat definitions always add a suffix after the slug.** When a specification has several flat definition files, each starts with its slug and a distinguishing name, such as `configuration.client.schema.v1.json` and `configuration.service.schema.v1.json` beside `configuration.yml`. There is no `assets/` folder.
+- **When the format's tooling fixes filenames or directories, preserve its native tree.** Put that tree in a folder named by the slug beside `<slug>.yml`, normally with that folder as its module root. For example, a proto package's directory and lower_snake_case filenames stay intact under `grpc-api/`. The folder holds only that native tree, never examples or fixtures.
+- **Design-document tools select names.** Read only immediate `<slug>.yml` files whose names have no further dot; never descend into the `<slug>/` definition folders. This keeps a definition such as `http-api.openapi.yml` separate from `http-api.yml`.
+- **Check examples against their definitions** as the [user documentation standard](../../standards/references/user-documentation.md#published-links) requires. Tests use those same files when they need valid examples.
 - **Invalid fixtures belong in tests,** in the repository's test layout, with assertions for the validation errors they exercise.
 - **Published reference is generated from the definitions.** Its pages live with the user documentation; published pages link to that reference as the [user documentation standard](../../standards/references/user-documentation.md#reference) requires.
 
