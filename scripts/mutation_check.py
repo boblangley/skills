@@ -41,6 +41,18 @@ MUTATIONS = [
         "BuildTests.test_appended_skill_front_matter_is_refused",
     ),
     (
+        "AGENTS metadata skip",
+        'skill.name in {"README.md", "AGENTS.md"}',
+        'skill.name in {"README.md"}',
+        "BuildTests.test_top_level_agents_metadata_is_ignored",
+    ),
+    (
+        "README metadata skip",
+        'skill.name in {"README.md", "AGENTS.md"}',
+        'skill.name in {"AGENTS.md"}',
+        "BuildTests.test_top_level_readme_metadata_is_ignored",
+    ),
+    (
         "validation before publication",
         "errors = check_tree(stage)\n            if errors:",
         "errors = check_tree(stage)\n            if False:",

@@ -63,7 +63,7 @@ task --dir /absolute/path/to/base build -- \
 
 `--overlay FOLDER` and `--project PATH FOLDER` may each repeat; they are applied in argument order after the base. For workspace-then-project precedence, pass the workspace overlay first. `PATH` is the absolute project path used as the heading, and may contain spaces when quoted. All source folders must exist; omit missing optional overlays in the caller. An empty overlay folder is valid. All filesystem arguments are relative to the Taskfile directory unless absolute, so callers should pass absolute paths.
 
-Overlay folders mirror the base: `<skill>/SKILL.md`, `<skill>/references/...`, and other files within the skill. Top-level dotfiles and `README.md` are metadata and are ignored. Every other top-level overlay entry must be a skill folder. A new skill supplies its own `SKILL.md`.
+Overlay folders mirror the base: `<skill>/SKILL.md`, `<skill>/references/...`, and other files within the skill. Top-level dotfiles, `README.md` and `AGENTS.md` are metadata and are ignored. Every other top-level overlay entry must be a skill folder. A new skill supplies its own `SKILL.md`.
 
 - An existing Markdown file is appended with a blank-line separator, including files introduced by an earlier overlay. An appended `SKILL.md` contains body text, without YAML front matter, so the base description stays intact.
 - A new file or skill is added. A collision on a non-Markdown file fails, even when the bytes are identical. New non-Markdown files retain their permissions.

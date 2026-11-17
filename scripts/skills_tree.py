@@ -189,7 +189,7 @@ def project_text(text: str, project: str) -> str:
 
 def merge_overlay(stage: Path, overlay: Overlay) -> None:
     for skill in sorted(overlay.folder.iterdir()):
-        if skill.name.startswith(".") or skill.name == "README.md":
+        if skill.name.startswith(".") or skill.name in {"README.md", "AGENTS.md"}:
             continue
         if skill.is_symlink() or not skill.is_dir():
             raise ValueError(f"{skill}: expected a skill folder, not a symlink or file")

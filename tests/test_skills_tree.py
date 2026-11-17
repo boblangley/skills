@@ -174,6 +174,23 @@ class BuildTests(TreeFixture):
         )
         self.assertEqual([], check_tree(self.output))
 
+    def test_top_level_agents_metadata_is_ignored(self):
+        self.write("workspace/AGENTS.md", "Folder instructions\n[not skill content](absent.md)\n")
+        self.assert_success(self.build("--project", "/workspace/project", self.workspace))
+        self.assertFalse((self.output / "AGENTS.md").exists())
+
+    def test_top_level_readme_metadata_is_ignored(self):
+        self.write("workspace/README.md", "Folder documentation\n[not skill content](absent.md)\n")
+        self.assert_success(self.build("--overlay", self.workspace))
+        self.assertFalse((self.output / "README.md").exists())
+
+    def test_other_top_level_file_is_refused(self):
+        self.write("workspace/notes.txt", "Not overlay metadata\n")
+        result = self.build("--overlay", self.workspace)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("notes.txt: expected a skill folder", result.stderr)
+        self.assertFalse(self.output.exists())
+
     def test_project_and_workspace_arguments_keep_their_order(self):
         self.write("workspace/alpha/SKILL.md", "last\n")
         self.write("project/alpha/SKILL.md", "first\n")
