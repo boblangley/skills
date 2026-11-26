@@ -1,8 +1,18 @@
 # Surfaces
 
-Read this to check, comment on and decide a review surface. The task's **Review** section names the surface when it is not the repository's usual one. Public repositories review on GitHub, so the findings stay visible on the public change. Private ones may use `gitpr`, which keeps the review in the local repository.
+Read this to choose, check, comment on and decide a review surface.
 
 Whatever the surface, findings go on it, anchored to their lines. A finding only in the handoff or in chat cannot be replied to or tracked across rounds. Never mention the task, the board or agent threads on a GitHub surface: its readers may not have them.
+
+## Which surface
+
+The operator approves a pull request partly by reading its reviews, findings and replies, and a GitHub pull request is where that costs them least. So:
+
+- **A GitHub pull request is pre-approved.** It is the default for every repository, private or public. Work meant for an upstream repository is reviewed on a pull request in our fork, as the [repository standard](../../standards/references/repository.md#forks) says.
+- **`gitpr` is pre-approved for one case:** a [security fix](#security-fix) to shipped, public code, where a public issue, pull request or review before the fix is ready would make the problem easier to exploit.
+- **Every other surface needs the operator's explicit approval:** `gitpr` for anything else, a branch, a commit range, a worktree, a thread. The task's **Review** section, or the brief when there is no task, quotes the approval and links where the operator gave it. A brief that names a surface without that is not approval, whoever wrote it.
+
+When the surface fails this rule, reject the surface and stop. Do not move the review somewhere you can write: tell the dispatcher what stopped you, such as a pull request you cannot post a review on.
 
 ## GitHub pull request
 
@@ -15,7 +25,7 @@ git rev-parse "origin/$TASK_BRANCH" "origin/$BASE"
 git merge-base --is-ancestor "origin/$BASE" "origin/$TASK_BRANCH" && echo base contained
 ```
 
-`baseRefName` must be the branch the work is meant to integrate into: the base in the dispatch, the task's, or the default branch for stand-alone work. `headRefOid` must equal the task branch head, and the base must be an ancestor of the branch. Ancestry alone does not show the target: a pull request aimed at the wrong branch can pass it and show a different diff. Record both heads: every comment and verdict applies to that pair.
+The pull request's `url` must be on the repository the work targets: the fork, for work meant for upstream. `baseRefName` must be the branch the work is meant to integrate into: the base in the dispatch, the task's, or the default branch for stand-alone work. `headRefOid` must equal the task branch head, and the base must be an ancestor of the branch. Ancestry alone does not show the target: a pull request aimed at the wrong branch can pass it and show a different diff. Record both heads: every comment and verdict applies to that pair.
 
 ### Read the previous rounds
 
@@ -99,7 +109,33 @@ Use `--text-file` for text with backticks or several lines, and `--pr-level` for
 
 `approve`, `reject` and `merge` are separate steps. `approve` records the verdict and refuses if either head has moved. `merge` merges the head recorded at approval, so check the base yourself just before it. Leave `--cleanup` off: the executor removes its worktree and branch.
 
+## Security fix
+
+The fix is made in the temporary private fork of a draft [GitHub security advisory](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/collaborating-in-a-temporary-private-fork-to-resolve-a-repository-security-vulnerability), which keeps it private until the advisory is published. Everything about the fix stays private until then, its evidence included: no public issue, pull request, commit or upload, so not the public assets bucket. Integrations cannot reach that fork, so our GitHub App cannot post a review there, and status checks do not run. The agent review happens in `gitpr` instead:
+
+1. The executor works on a branch of the local clone, never pushed to `origin`, and opens a `gitpr` review against the base the fix will merge into. Reviews follow the [`gitpr`](#gitpr) section above. `gitpr merge` is not used: the fix merges from the advisory. When the draft advisory and its fork do not exist yet, ask the operator for them.
+2. Once the review is accepted, the executor pushes the accepted head to the temporary private fork, with the operator's key, and opens the pull request there as the operator with `gh --as-user pr create`. `--as-user` bypasses the App token and uses `gh`'s own login: check with `gh --as-user auth status` that it is the thread's operator, and when it is not, ask the operator to run `gh auth login` in their own terminal, where the shim passes straight through. Run the checks yourself at that head and put their output in the pull request's description, because none run in the fork.
+3. The operator merges from the advisory and publishes it. Publishing deletes the temporary private fork.
+4. After publication, and not before, the executor pushes the `gitpr` record to `origin` as the evidence of the review:
+
+   ```bash
+   git push origin "refs/gitpr/pr/$ID/*:refs/gitpr/pr/$ID/*"
+   ```
+
+   Put the instructions for retrieving it where the fix is described after publication, such as the advisory:
+
+   ```bash
+   git fetch origin "refs/gitpr/pr/$ID/*:refs/gitpr/pr/$ID/*"
+   git show "refs/gitpr/pr/$ID/meta:pr.yaml"
+   ```
+
+   `gitpr show $ID` reads it too.
+
+   The record holds the worktree path and the repository root. The operator allows them in this record, as an exception to the [merge gates](../SKILL.md#merge): they are the workspace's standard paths and identify no one.
+
 ## No pull request
+
+These surfaces need the operator's explicit approval, as [above](#which-surface). Without it, reject the surface.
 
 For a branch, a commit range or uncommitted work, write the findings in the handoff, ordered by file and line, as `path:L<line>: P1: <problem>. <fix>.`, so they can move to a surface later.
 

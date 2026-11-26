@@ -158,18 +158,13 @@ Reread the handoff against its evidence. Each result quoted comes from a run at 
 
 Work is reviewed after the fact, so include evidence that lets a person see the outcome without running anything or reading the transcript: screenshots, recordings, terminal captures, the output of the proving script.
 
-Keep the evidence where the reviewer will look: linked in the pull request, issue and task. Commit it only when it will be reused elsewhere. Upload media as the [`public-assets` skill](../public-assets/SKILL.md) says, and link its URL in GitHub descriptions and comments.
+Keep the evidence where the reviewer will look: linked in the pull request, issue and task. Commit it only when it will be reused elsewhere. Upload media as the [`public-assets` skill](../public-assets/SKILL.md) says, and link its URL in GitHub descriptions and comments. A [security fix](../review/references/surfaces.md#security-fix) keeps its evidence private until it is published.
 
 Name a skipped check as unverified. Do not report it as passed.
 
-Note the target branch for the PR: Epics often use an epic branch as the target. Stand-alone work the default is `main`. If you are unsure, ask.
+Note the target branch for the PR: Epics often use an epic branch as the target. Stand-alone work the default is `main`. Work meant for an upstream repository targets a branch of our fork, as the [repository standard](../standards/references/repository.md#forks) says. If you are unsure, ask.
 
-- GitHub PR review (default):
-  - Push the branch
-  - Open a GitHub PR
-- gitpr review (local):
-  - create the PR using gitpr
-- Non-git review surfaces will be added as they are needed.
+Open the review on the surface [surfaces](../review/references/surfaces.md#which-surface) allows: a GitHub pull request (push the branch and open the pull request), unless the work is a security fix or the operator approved another surface. The reviewer rejects any other. When no allowed surface is open to you, stop and ask the operator. Do not choose another surface yourself.
 
 ### Independent review
 

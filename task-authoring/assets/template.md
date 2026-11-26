@@ -40,7 +40,7 @@ Known gaps:
 
 ## Review
 
-{The review surface and reviewer, when they differ from the repository's normal practice, and whether the reviewer merges on acceptance. Omit otherwise.}
+{Whether the reviewer merges on acceptance, and who reviews when it is not the ordinary reviewer. For a surface other than a GitHub pull request, name it and why the review skill's surfaces reference allows it: the security fix, or the operator's approval quoted and linked. For work meant for an upstream repository, name the fork branch the pull request targets. Omit when none of these applies.}
 
 ## Related Records
 
